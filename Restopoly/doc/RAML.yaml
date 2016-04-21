@@ -1,0 +1,79 @@
+#%RAML 0.8
+title: RESTopoly
+version: "1.0.0"
+baseUri: "https://my.ip.com:8080"
+schemas: 
+    - 
+        player_jail: '{"type":"object","$schema":"http://json-schema.org/draft-03/schema#","description":"Informationen über den Spieler","title":"player_jail","properties":{"player_id":{"type":"integer","required":true,"title":"player_id"}}}'
+    - 
+        player: '{"type":"object","$schema":"http://json-schema.org/draft-03/schema#","description":"Detaillierte Spielerinformation","title":"player","properties":{"id":{"type":"integer","required":true,"title":"id"},"name":{"type":"string","required":true,"title":"name"},"form":{"type":"string","required":true,"title":"form"},"money":{"type":"integer","required":true,"title":"money"}}}'
+    - 
+        game_presentation: '{"type":"object","$schema":"http://json-schema.org/draft-03/schema#","title":"game_presentation","properties":{"id":{"type":"integer","required":true,"title":"id"},"player_list":{"type":"array","required":true,"title":"player_list","items":{"type":"object","$ref":"#/schemas/player_jail"},"uniqueItems":false}}}'
+
+/games:
+    displayName: games
+    description: Meta-Ebene des Spieles, verwaltet Spieler und Runden
+    get: 
+        description: Gibt die aktiven Spiele zurück
+        responses: 
+            "200": 
+                description: Eine Collection der aktiven Spiele
+                body: 
+                    application/json: 
+                        schema: game_presentation
+                        example: '{"id":1,"player_list":[]}'
+
+/boards: 
+    displayName: boards
+    description: Spielbrett, verwaltet Platzierungen
+    get: 
+        responses: 
+            "200": 
+/banks: 
+    displayName: banks
+    description: Bank, die alle Geldangelegenheiten handhabt
+    get: 
+        responses: 
+            "200": 
+/brokers: 
+    displayName: brokers
+    description: Verwaltung von Grundstücken und Mieten
+    get: 
+        responses: 
+            "200": 
+/player: 
+    displayName: player
+    description: Der Spieler selbst
+    get: 
+        queryParameters: 
+            player_id: 
+                displayName: player_id
+                description: Eindeutige Spieler ID
+                type: integer
+                required: true
+                repeat: false
+                example: /player?player_id=12345
+        responses: 
+            "200": 
+                description: Gibt die detaillierte Spielerinformation zurück
+                body: 
+                    application/json: 
+                        schema: player
+                        example: '{"id":1,"form":"sample form","name":"sample name","money":1}'
+/decks: 
+    displayName: decks
+    description: Die Kartenstapel für Ereignis- und Gesellschaftskarten
+    get: 
+        responses: 
+            "200": 
+/jail: 
+    displayName: jail
+    description: das Gefängnis
+    get: 
+        responses: 
+            "200": 
+                description: Gibt eine Collection von Spielern die im Gefängnis sind zurück
+                body: 
+                    application/json: 
+                        schema: player
+                        example: '[{"id":1,"form":"sample form","name":"sample name","money":1}]'
