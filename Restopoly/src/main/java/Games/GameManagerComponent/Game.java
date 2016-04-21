@@ -1,5 +1,7 @@
 package Games.GameManagerComponent;
 
+import Games.Exceptions.PlayerNotFoundException;
+import Games.Exceptions.PlayerSequenceWrongException;
 import Games.GameManagerComponent.DTO.GameDTO;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -13,6 +15,7 @@ public class Game {
     private String name;
     private PlayerManager playerManager;
     private GameStatus status;
+    private Mutex mutex;
     private Services services;
     private Components components;
 
@@ -38,6 +41,8 @@ public class Game {
         this.status = status;
         this.services = services;
         this.components = components;
+
+        this.mutex = new Mutex();
     }
 
     public String getId() {
@@ -83,6 +88,49 @@ public class Game {
         checkNotNull(components);
         this.components = components;
     }
+
+    public void signalPlayerState(Player p) {
+        checkNotNull(p);
+
+        if(getStatus().equals(GameStatus.REGISTRATION)){
+            p.setReady(true);
+            tryToStartGame();
+        }else if(getStatus().equals(GameStatus.RUNNING)){
+            playerManager.getNextPlayer();
+        }else{
+            // TODO wenn spiel im FINISHED status
+        }
+    }
+
+    public synchronized Player getPlayerHoldingMutex() throws PlayerNotFoundException {
+        String playerID = mutex.getPlayerID();
+        return playerManager.getPlayerById(playerID);
+    }
+
+    public synchronized boolean isMutexReleased(){
+        return mutex.isReleased();
+    }
+
+    public synchronized boolean setMutex(Player p) throws PlayerSequenceWrongException {
+        checkNotNull(p);
+        if(!mutex.getPlayerID().equals(p.getId())) throw new PlayerSequenceWrongException();
+        if(!getPlayerManager().getCurrentPlayer().equals(p)) throw new PlayerSequenceWrongException();
+
+        if(mutex.getPlayerID().equals(p.getId())) return false;
+        return mutex.acquire(p.getId());
+    }
+
+    /**** operations ****/
+    private void tryToStartGame(){
+        if(getStatus().equals(GameStatus.REGISTRATION)){
+            if(playerManager.isPlayersReadyToStart()){
+                status = GameStatus.RUNNING;
+                // TODO
+            }
+        }
+    }
+
+
 }
 
 enum GameStatus {
@@ -99,5 +147,31 @@ enum GameStatus {
     @Override
     public String toString(){
         return this.val;
+    }
+}
+
+class Mutex{
+
+    private String playerID;
+
+    synchronized boolean acquire(String playerID){
+        checkNotNull(playerID);
+
+        if(!isReleased()) return false;
+        this.playerID = playerID;
+
+        return true;
+    }
+
+    synchronized boolean isReleased(){
+        return playerID.isEmpty();
+    }
+
+    synchronized void release(){
+        this.playerID = "";
+    }
+
+    synchronized String getPlayerID(){
+        return playerID;
     }
 }

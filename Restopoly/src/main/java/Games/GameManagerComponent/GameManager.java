@@ -2,6 +2,7 @@ package Games.GameManagerComponent;
 
 import Games.Exceptions.GameNotFoundException;
 import Games.Exceptions.PlayerNotFoundException;
+import Games.Exceptions.PlayerSequenceWrongException;
 import Games.Exceptions.WrongFormatException;
 import Games.GameManagerComponent.DTO.ComponentsDTO;
 import Games.GameManagerComponent.DTO.GameDTO;
@@ -119,6 +120,7 @@ public class GameManager {
         try{
             GameDTO gameDTO = gson.fromJson(gameJsonString, GameDTO.class);
             createGame(gameDTO);
+            // TODO registrieren bei Spielbrett service
 
         }catch (JsonSyntaxException ex){
             throw new WrongFormatException("Game format wrong");
@@ -263,5 +265,45 @@ public class GameManager {
         PlayerManager playerManager = g.getPlayerManager();
         Player p = playerManager.getPlayerById(playerID);
         return p.isReady();
+    }
+
+    public void signalPlayerState(String gameID, String playerID) throws GameNotFoundException, PlayerNotFoundException {
+
+        Game g = getGameObjectById(gameID);
+        Player p = g.getPlayerManager().getPlayerById(playerID);
+
+        g.signalPlayerState(p);
+
+    }
+
+    public String getCurrentPlayer(String gameID) throws GameNotFoundException {
+
+        Game g = getGameObjectById(gameID);
+        Player player = g.getPlayerManager().getCurrentPlayer();
+        PlayerDTO playerDTO = player.toDTO();
+
+        return gson.toJson(playerDTO);
+    }
+
+    public String getPlayersTurn(String gameID) throws GameNotFoundException, PlayerNotFoundException {
+
+        Game g = getGameObjectById(gameID);
+        Player player = g.getPlayerHoldingMutex();
+        PlayerDTO playerDTO = player.toDTO();
+
+        return gson.toJson(playerDTO);
+    }
+
+    public boolean isMutexReleased(String gameID) throws GameNotFoundException {
+
+        Game g = getGameObjectById(gameID);
+        return g.isMutexReleased();
+    }
+
+    public boolean setPlayerTurn(String gameID, String playerID) throws GameNotFoundException, PlayerNotFoundException, PlayerSequenceWrongException {
+
+        Game g = getGameObjectById(gameID);
+        Player player = g.getPlayerManager().getPlayerById(playerID);
+        return g.setMutex(player);
     }
 }

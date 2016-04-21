@@ -3,10 +3,7 @@ package Games.GameManagerComponent;
 import Games.Exceptions.PlayerNotFoundException;
 import Games.GameManagerComponent.DTO.PlayerDTO;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -19,14 +16,16 @@ public class PlayerManager {
     private final int maxPlayer = 8;
     private final int minPlayer = 2;
     private final Map<String,Player> playerMap;
+    private final Queue<Player> playerQueue;
 
     public PlayerManager(String id){
         checkNotNull(id);
         this.id = id;
         this.playerMap = new HashMap();
+        this.playerQueue = new LinkedList();
     }
 
-    public String addPlayer(PlayerDTO playerDTO){
+    public synchronized String addPlayer(PlayerDTO playerDTO){
         checkNotNull(playerDTO);
         if(playerMap.size() > maxPlayer) return "";
 
@@ -35,13 +34,15 @@ public class PlayerManager {
         Player player = Player.fromDTO(playerDTO);
 
         playerMap.put(player.getId(),player);
+        playerQueue.offer(player);
         return player.getId();
     }
 
-    public void removePlayer(String playerID) throws PlayerNotFoundException {
+    public synchronized void removePlayer(String playerID) throws PlayerNotFoundException {
         checkNotNull(playerID);
         if(!playerMap.containsKey(playerID)) throw new PlayerNotFoundException();
-        playerMap.remove(playerID);
+        Player p = playerMap.remove(playerID);
+        playerQueue.remove(p);
     }
 
     public Player getPlayerById(String playerId) throws PlayerNotFoundException {
@@ -56,7 +57,7 @@ public class PlayerManager {
 
     public String getId(){return id;}
 
-    public void updatePlayer(String playerID, PlayerDTO playerDTO) throws PlayerNotFoundException {
+    public synchronized void updatePlayer(String playerID, PlayerDTO playerDTO) throws PlayerNotFoundException {
         checkNotNull(playerID);
         checkNotNull(playerDTO);
 
@@ -66,6 +67,23 @@ public class PlayerManager {
         p.setUser(playerDTO.getUser());
     }
 
+    /**** operations ****/
+    synchronized boolean isPlayersReadyToStart(){
+        for(Player p : playerMap.values()){
+            if(!p.isReady()) return false;
+        }
+        return true;
+    }
+
+    synchronized Player getNextPlayer(){
+        Player p = playerQueue.poll();
+        playerQueue.offer(p);
+        return playerQueue.peek();
+    }
+
+    synchronized Player getCurrentPlayer(){
+        return playerQueue.peek();
+    }
 }
 
 class Player{

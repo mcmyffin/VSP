@@ -222,7 +222,6 @@ public class Main {
             res.status(200);
             String gameID = req.params(":gameID");
             String playerID = req.params(":playerID");
-            // TODO
             gameManager.signalPlayerState(gameID,playerID); // muss GameNotFoundException werfen wenn nicht gefunden
                                                             // muss PlayerNotFoundException werfen wenn nicht gefunden
             return "OK";
@@ -235,10 +234,8 @@ public class Main {
             res.status(200);
             res.header("Content-Type","application/json");
 
-            // TODO
             String gameID = req.params(":gameID");
             String player = gameManager.getCurrentPlayer(gameID);   // muss GameNotFoundException werfen wenn nicht gefunden
-
             return player;
         });
 
@@ -249,10 +246,9 @@ public class Main {
             res.status(200);
             res.header("Content-Type","application/json");
 
-            // TODO
             String gameID = req.params(":gameID");
             String player = gameManager.getPlayersTurn(gameID); // muss GameNotFoundException werfen wenn nicht gefunden
-
+            // TODO -> was passiert wenn keiner den MUTEX hällt ? (momentan wird Exception PlayerNotFoundException geworfen!)
             return player;
         });
 
@@ -265,9 +261,8 @@ public class Main {
             String gameID = req.params(":gameID");
             String playerID = req.queryParams("player");
 
-            // TODO
-            String currentPlayer = gameManager.getCurrentPlayer(gameID);
-            if(!currentPlayer.contains(playerID)){
+            boolean isMutexReleased = gameManager.isMutexReleased(gameID);
+            if(!isMutexReleased){
                 res.status(409); // Conflict
                 return "already aquired by an other player";
             }
@@ -322,11 +317,18 @@ public class Main {
             res.body(ex.getMessage());
         });
 
+        exception(UnsupportedOperationException.class, (ex,req,res) -> {
+            res.status(400); // not implemented
+            res.body("Wrong player turn");
+        });
 
 
         exception(UnsupportedOperationException.class, (ex,req,res) -> {
             res.status(501); // not implemented
             res.body("Not implemented Method");
         });
+
+
+
     }
 }
