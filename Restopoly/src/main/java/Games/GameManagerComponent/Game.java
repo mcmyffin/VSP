@@ -1,5 +1,6 @@
 package Games.GameManagerComponent;
 
+import Games.Exceptions.GameStateException;
 import Games.Exceptions.PlayerNotFoundException;
 import Games.Exceptions.PlayerSequenceWrongException;
 import Games.GameManagerComponent.DTO.GameDTO;
@@ -89,16 +90,20 @@ public class Game {
         this.components = components;
     }
 
-    public void signalPlayerState(Player p) {
+    public void signalPlayerState(Player p) throws PlayerSequenceWrongException {
         checkNotNull(p);
 
+        Player currentPlayer = getPlayerManager().getCurrentPlayer();
         if(getStatus().equals(GameStatus.REGISTRATION)){
             p.setReady(true);
             tryToStartGame();
         }else if(getStatus().equals(GameStatus.RUNNING)){
+            if(!currentPlayer.equals(p)) throw new PlayerSequenceWrongException();
+            mutex.release();
             playerManager.getNextPlayer();
         }else{
             // TODO wenn spiel im FINISHED status
+            throw new UnsupportedOperationException();
         }
     }
 
@@ -120,16 +125,51 @@ public class Game {
         return mutex.acquire(p.getId());
     }
 
+    public synchronized void removeMutex(){
+        removeMutex();
+    }
+
+
+
+    public void nextGameStatus() throws GameStateException {
+
+        if(status.equals(GameStatus.REGISTRATION)){
+
+            if(playerManager.isPlayersReadyToStart()) tryToStartGame();
+            else throw new GameStateException();
+
+        }else if(status.equals(GameStatus.RUNNING)){
+
+            if(isGameEndCreateriaReached()) tryToStopGame();
+            else throw new GameStateException();
+        }else{
+
+            playerManager.resetPlayersReady();
+            mutex.release();
+            status = GameStatus.REGISTRATION;
+            // todo spielbrett service reseten ?
+        }
+    }
+
     /**** operations ****/
     private void tryToStartGame(){
         if(getStatus().equals(GameStatus.REGISTRATION)){
             if(playerManager.isPlayersReadyToStart()){
                 status = GameStatus.RUNNING;
-                // TODO
+                // TODO ...
             }
         }
     }
 
+    private void tryToStopGame(){
+        // TODO
+        throw new UnsupportedOperationException();
+    }
+
+    private boolean isGameEndCreateriaReached(){
+        // TODO
+        throw new UnsupportedOperationException();
+    }
 
 }
 

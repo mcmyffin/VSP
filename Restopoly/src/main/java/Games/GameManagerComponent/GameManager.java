@@ -1,9 +1,6 @@
 package Games.GameManagerComponent;
 
-import Games.Exceptions.GameNotFoundException;
-import Games.Exceptions.PlayerNotFoundException;
-import Games.Exceptions.PlayerSequenceWrongException;
-import Games.Exceptions.WrongFormatException;
+import Games.Exceptions.*;
 import Games.GameManagerComponent.DTO.ComponentsDTO;
 import Games.GameManagerComponent.DTO.GameDTO;
 import Games.GameManagerComponent.DTO.PlayerDTO;
@@ -138,8 +135,10 @@ public class GameManager {
         return g.getStatus().toString();
     }
 
-    public void setGameStatusByGameId(String gameStatusByGameId) {
-        throw new UnsupportedOperationException();
+    public void setGameStatusByGameId(String gameID) throws GameNotFoundException, GameStateException {
+
+        Game g = getGameObjectById(gameID);
+        g.nextGameStatus();
     }
 
 
@@ -267,7 +266,7 @@ public class GameManager {
         return p.isReady();
     }
 
-    public void signalPlayerState(String gameID, String playerID) throws GameNotFoundException, PlayerNotFoundException {
+    public void signalPlayerState(String gameID, String playerID) throws GameNotFoundException, PlayerNotFoundException, PlayerSequenceWrongException {
 
         Game g = getGameObjectById(gameID);
         Player p = g.getPlayerManager().getPlayerById(playerID);
@@ -305,5 +304,11 @@ public class GameManager {
         Game g = getGameObjectById(gameID);
         Player player = g.getPlayerManager().getPlayerById(playerID);
         return g.setMutex(player);
+    }
+
+    public void removePlayerTurn(String gameID) throws GameNotFoundException {
+
+        Game g = getGameObjectById(gameID);
+        g.removeMutex();
     }
 }

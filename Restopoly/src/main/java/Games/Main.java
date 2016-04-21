@@ -70,11 +70,10 @@ public class Main {
         put("/games/:gameID/status", (req,res) -> {
 
             res.status(200); // The change has been applied
-            res.status(409); // Conflicting situation, such as at least one player is not ready or ending criteria not reached
             String gameID = req.params(":gameID");
             gameManager.setGameStatusByGameId(gameID);
-            // TODO keine Ahnung
-            return "TODO";
+
+            return "The change has been applied";
         });
 
 
@@ -248,7 +247,7 @@ public class Main {
 
             String gameID = req.params(":gameID");
             String player = gameManager.getPlayersTurn(gameID); // muss GameNotFoundException werfen wenn nicht gefunden
-            // TODO -> was passiert wenn keiner den MUTEX hällt ? (momentan wird Exception PlayerNotFoundException geworfen!)
+            // TODO -> was passiert wenn keiner den MUTEX hällt ? (momentan wird 404 Exception PlayerNotFoundException geworfen!)
             return player;
         });
 
@@ -284,9 +283,7 @@ public class Main {
         delete("/games/:gameID/players/turn",(req,res) -> {
 
             String gameID = req.params(":gameID");
-
-            // TODO
-            boolean releaseMutex = gameManager.removePlayerTurn(gameID);
+            gameManager.removePlayerTurn(gameID);
 
             return "OK removed";
         });
@@ -303,32 +300,34 @@ public class Main {
         });
 
         exception(QuerryParamsNotFound.class, (ex, req, res) -> {
-            res.status(400);
+            res.status(400);// bad request
             res.body("QuerryParameter required");
         });
 
         exception(WrongContentTypeException.class, (ex, req, res) -> {
-            res.status(400);
+            res.status(400);// bad request
             res.body("Wrong Content-Type");
         });
 
         exception(WrongFormatException.class, (ex, req, res) -> {
-            res.status(400);
+            res.status(400);// bad request
             res.body(ex.getMessage());
         });
 
-        exception(UnsupportedOperationException.class, (ex,req,res) -> {
-            res.status(400); // not implemented
+        exception(PlayerSequenceWrongException.class, (ex,req,res) -> {
+            res.status(409); // Conflict
             res.body("Wrong player turn");
         });
 
+        exception(GameStateException.class, (ex,req,res) -> {
+            res.status(409); // Conflict
+            res.body("Conflicting situation, such as at least one player is not ready or ending criteria not reached");
+        });
 
         exception(UnsupportedOperationException.class, (ex,req,res) -> {
             res.status(501); // not implemented
             res.body("Not implemented Method");
+            ex.printStackTrace();
         });
-
-
-
     }
 }

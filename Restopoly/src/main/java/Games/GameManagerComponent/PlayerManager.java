@@ -84,6 +84,16 @@ public class PlayerManager {
     synchronized Player getCurrentPlayer(){
         return playerQueue.peek();
     }
+
+    synchronized void resetPlayersReady(){
+
+        // queue reset
+        playerQueue.clear();
+        playerQueue.addAll(playerMap.values());
+
+        // players readyStatus reset
+        for (Player p : playerMap.values()) p.setReady(false);
+    }
 }
 
 class Player{
