@@ -16,15 +16,6 @@ public class EventDTO {
     private String time;
 
 
-    public EventDTO(String game, String type, String name, String reason, String resource){
-
-        this.game = game;
-        this.type = type;
-        this.name = name;
-        this.reason = reason;
-        this.resource = resource;
-    }
-
     public EventDTO(String game, String type, String name, String reason, String resource, String player, String time) {
         this.game = game;
         this.type = type;

@@ -36,7 +36,10 @@ public class EventManager {
                                 dto.getGame(),
                                 dto.getType(),
                                 dto.getName(),
-                                dto.getReason()
+                                dto.getReason(),
+                                dto.getResource(),
+                                dto.getPlayer(),
+                                dto.getTime()
                             );
 
         eventMap.put(mapID,e);
@@ -172,7 +175,7 @@ public class EventManager {
         checkNotNull(queryParamsMap);
 
         Collection<Event> eventCollection = searchByquery(queryParamsMap.toMap());
-        for(Event e : eventCollection) eventMap.remove(e.getId());
+        for(Event e : eventCollection) eventMap.remove(e.getId().substring(e.getId().indexOf("/")+1));
 
         return eventCollectionToJson(eventCollection);
     }

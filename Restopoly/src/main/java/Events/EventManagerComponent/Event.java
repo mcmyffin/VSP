@@ -8,21 +8,24 @@ import Events.EventManagerComponent.DTO.EventDTO;
 public class Event {
 
     private final String id;
-    private final String game;
-    private final String type;
-    private final String name;
-    private final String reason;
+    private String game;
+    private String type;
+    private String name;
+    private String reason;
     private String resource;
 
     private String player;
     private String time;
 
-    public Event(String id, String game, String type, String name, String reason) {
+    public Event(String id, String game, String type, String name, String reason, String resource, String player, String time) {
         this.id = id;
         this.game = game;
         this.type = type;
         this.name = name;
         this.reason = reason;
+        this.resource = resource;
+        this.player = player;
+        this.time = time;
     }
 
     /** getter **/
@@ -59,6 +62,22 @@ public class Event {
     }
 
     /** setter **/
+    public void setGame(String game) {
+        this.game = game;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setReason(String reason) {
+        this.reason = reason;
+    }
+
     public void setResource(String resource) {
         this.resource = resource;
     }
@@ -70,6 +89,7 @@ public class Event {
     public void setTime(String time) {
         this.time = time;
     }
+
 
     public EventDTO toDTO(){
         EventDTO dto = new EventDTO(
@@ -91,7 +111,10 @@ public class Event {
                 dto.getGame(),
                 dto.getType(),
                 dto.getName(),
-                dto.getReason()
+                dto.getReason(),
+                dto.getResource(),
+                dto.getPlayer(),
+                dto.getTime()
         );
 
         e.setPlayer(dto.getPlayer());
