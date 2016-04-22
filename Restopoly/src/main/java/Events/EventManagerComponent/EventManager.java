@@ -29,16 +29,17 @@ public class EventManager {
         Gson gson = new Gson();
         EventDTO dto = gson.fromJson(jsonBody,EventDTO.class);
 
-        String id = "events/"+eventMap.size();
+        String mapID = Integer.toString(eventMap.size());
+        String eventID = "event/"+mapID;
         Event e = new Event(
-                                id,
+                                eventID,
                                 dto.getGame(),
                                 dto.getType(),
                                 dto.getName(),
                                 dto.getReason()
                             );
 
-        eventMap.put(id,e);
+        eventMap.put(mapID,e);
     }
 
 
