@@ -1,7 +1,6 @@
 package Games;
 import Games.Exceptions.*;
 import Games.GameManagerComponent.GameManager;
-import org.json.JSONObject;
 
 import static spark.Spark.*;
 
@@ -81,8 +80,7 @@ public class Main {
          * Gets a services
          */
         get("/games/:gameID/services" , (req,res) -> {
-            if(!req.headers("Content-Type").equals("application/json")) throw new WrongContentTypeException();
-
+            res.header("Content-Type","application/json");
             res.status(200);
             String gameID = req.params(":gameID");
 
@@ -292,36 +290,43 @@ public class Main {
         exception(GameNotFoundException.class, (ex,req,res) -> {
             res.status(404);
             res.body("Game not found");
+            ex.printStackTrace();
         });
 
         exception(PlayerNotFoundException.class, (ex, req, res) -> {
             res.status(404);
             res.body("Player not found");
+            ex.printStackTrace();
         });
 
         exception(QuerryParamsNotFound.class, (ex, req, res) -> {
             res.status(400);// bad request
             res.body("QuerryParameter required");
+            ex.printStackTrace();
         });
 
         exception(WrongContentTypeException.class, (ex, req, res) -> {
             res.status(400);// bad request
             res.body("Wrong Content-Type");
+            ex.printStackTrace();
         });
 
         exception(WrongFormatException.class, (ex, req, res) -> {
             res.status(400);// bad request
             res.body(ex.getMessage());
+            ex.printStackTrace();
         });
 
         exception(PlayerSequenceWrongException.class, (ex,req,res) -> {
             res.status(409); // Conflict
             res.body("Wrong player turn");
+            ex.printStackTrace();
         });
 
         exception(GameStateException.class, (ex,req,res) -> {
             res.status(409); // Conflict
             res.body("Conflicting situation, such as at least one player is not ready or ending criteria not reached");
+            ex.printStackTrace();
         });
 
         exception(UnsupportedOperationException.class, (ex,req,res) -> {

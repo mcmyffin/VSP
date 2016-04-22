@@ -1,8 +1,10 @@
 package Games.GameManagerComponent;
 
 import Games.Exceptions.GameStateException;
+import Games.Exceptions.ParseException;
 import Games.Exceptions.PlayerNotFoundException;
 import Games.Exceptions.PlayerSequenceWrongException;
+import Games.GameManagerComponent.DTO.GameCreateDTO;
 import Games.GameManagerComponent.DTO.GameDTO;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -20,7 +22,7 @@ public class Game {
     private Services services;
     private Components components;
 
-    public static Game fromDTO(GameDTO dto){
+    public static Game fromDTO(GameCreateDTO dto){
         checkNotNull(dto);
 
         Game g = new Game(
@@ -28,8 +30,8 @@ public class Game {
                 dto.getName(),
                 new PlayerManager(dto.getPlayers()),
                 GameStatus.REGISTRATION,
-                Services.fromDTO(dto.getServicesDTO()),
-                Components.fromDTO(dto.getComponentsDTO())
+                null,
+                null
         );
         return g;
     }
@@ -75,8 +77,8 @@ public class Game {
                 id,
                 name,
                 playerManager.getId(),
-                services.toDTO(),
-                components.toDTO()
+                services.getId(),
+                components.getId()
         );
     }
 
@@ -95,12 +97,16 @@ public class Game {
 
         Player currentPlayer = getPlayerManager().getCurrentPlayer();
         if(getStatus().equals(GameStatus.REGISTRATION)){
+
             p.setReady(true);
             tryToStartGame();
+
         }else if(getStatus().equals(GameStatus.RUNNING)){
+
             if(!currentPlayer.equals(p)) throw new PlayerSequenceWrongException();
             mutex.release();
             playerManager.getNextPlayer();
+
         }else{
             // TODO wenn spiel im FINISHED status
             throw new UnsupportedOperationException();

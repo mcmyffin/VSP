@@ -1,10 +1,7 @@
 package Games.GameManagerComponent;
 
 import Games.Exceptions.*;
-import Games.GameManagerComponent.DTO.ComponentsDTO;
-import Games.GameManagerComponent.DTO.GameDTO;
-import Games.GameManagerComponent.DTO.PlayerDTO;
-import Games.GameManagerComponent.DTO.ServicesDTO;
+import Games.GameManagerComponent.DTO.*;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 import com.sun.istack.internal.NotNull;
@@ -78,22 +75,34 @@ public class GameManager {
 
 
 
-    private void createGame(@NotNull GameDTO gameDTO){
+    private void createGame(@NotNull GameCreateDTO gameCreateDTO){
 
-        String gamesId = "games/"+gamesMap.size();
+        // create ID's
+        String id = Integer.toString(gamesMap.size());
+        String gamesId = "games/"+id;
         String playersId = gamesId+"/players";
         String servicesId = gamesId+"/services";
         String componentsId = gamesId+"/components";
 
-        gameDTO.setId(gamesId);
-        gameDTO.setPlayers(playersId);
+        // get Services and Components
+        ComponentsDTO componentsDTO = gameCreateDTO.getComponents();
+        ServicesDTO servicesDTO     = gameCreateDTO.getServices();
 
-        gameDTO.getComponentsDTO().setId(componentsId);
-        gameDTO.getServicesDTO().setId(servicesId);
+        // set IDS
+        gameCreateDTO.setId(gamesId);
+        gameCreateDTO.setPlayers(playersId);
 
-        Game g = Game.fromDTO(gameDTO);
+        componentsDTO.setId(componentsId);
+        servicesDTO.setId(servicesId);
 
-        gamesMap.put(gamesId,g);
+        // build Game
+        Game g = Game.fromDTO(gameCreateDTO);
+
+        // add Components and Services
+        g.setComponents(Components.fromDTO(componentsDTO));
+        g.setServices(Services.fromDTO(servicesDTO));
+
+        gamesMap.put(id,g);
     }
 
 
@@ -115,8 +124,9 @@ public class GameManager {
     public void createGame(String gameJsonString) throws WrongFormatException {
 
         try{
-            GameDTO gameDTO = gson.fromJson(gameJsonString, GameDTO.class);
+            GameCreateDTO gameDTO = gson.fromJson(gameJsonString, GameCreateDTO.class);
             createGame(gameDTO);
+
             // TODO registrieren bei Spielbrett service
 
         }catch (JsonSyntaxException ex){
@@ -148,7 +158,8 @@ public class GameManager {
         Services s = g.getServices();
         ServicesDTO servicesDTO = s.toDTO();
 
-        return gson.toJson(servicesDTO);
+        String txt = gson.toJson(servicesDTO);
+        return txt;
     }
 
     public void setServicesToGame(String gameID, String servicesStringJson) throws GameNotFoundException, WrongFormatException {

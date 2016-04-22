@@ -1,5 +1,6 @@
 package Games.GameManagerComponent.DTO;
 
+
 /**
  * Created by dima on 12.04.16.
  */
@@ -8,19 +9,15 @@ public class GameDTO {
     private String id;
     private String name;
     private String players;
-    private ServicesDTO servicesDTO;
-    private ComponentsDTO componentsDTO;
+    private String services;
+    private String components;
 
-    public GameDTO(String name, String players, ServicesDTO ServicesDTO, ComponentsDTO ComponentsDTO){
-        this(null,name,players,ServicesDTO,ComponentsDTO);
-    }
-
-    public GameDTO(String id, String name, String players, ServicesDTO servicesDTO, ComponentsDTO componentsDTO) {
+    public GameDTO(String id, String name, String players, String services, String components) {
         this.id = id;
         this.name = name;
         this.players = players;
-        this.servicesDTO = (servicesDTO == null ? new ServicesDTO(): servicesDTO);
-        this.componentsDTO = (componentsDTO == null ? new ComponentsDTO(): componentsDTO);
+        this.services = services;
+        this.components = components;
     }
 
     public void setId(String id) {
@@ -35,12 +32,12 @@ public class GameDTO {
         this.players = players;
     }
 
-    public void setServicesDTO(ServicesDTO servicesDTO) {
-        this.servicesDTO = servicesDTO;
+    public void setServices(String services) {
+        this.services = services;
     }
 
-    public void setComponentsDTO(ComponentsDTO componentsDTO) {
-        this.componentsDTO = componentsDTO;
+    public void setComponents(String components) {
+        this.components = components;
     }
 
     public String getId() {
@@ -55,11 +52,23 @@ public class GameDTO {
         return players;
     }
 
-    public ServicesDTO getServicesDTO() {
-        return servicesDTO;
+    public String getServices() {
+        return services;
     }
 
-    public ComponentsDTO getComponentsDTO() {
-        return componentsDTO;
+    public String getComponents() {
+        return components;
+    }
+
+
+    @Override
+    public String toString() {
+        return "GameDTO{" +
+                "id='" + id + '\'' +
+                ", name='" + name + '\'' +
+                ", players='" + players + '\'' +
+                ", services=" + services +
+                ", components=" + components +
+                '}';
     }
 }

@@ -11,10 +11,6 @@ public class PlayerDTO {
     private String account;
     private String ready;
 
-    public PlayerDTO(String user, String pawn, String account, String ready){
-        this(null,user,pawn,account,ready);
-    }
-
     public PlayerDTO(String id, String user, String pawn, String account, String ready) {
         this.id = id;
         this.user = user;

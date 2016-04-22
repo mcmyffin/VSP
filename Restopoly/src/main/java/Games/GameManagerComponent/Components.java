@@ -109,6 +109,7 @@ public class Components {
 
     public ComponentsDTO toDTO(){
         return new ComponentsDTO(
+                id,
                 game,
                 dice,
                 board,

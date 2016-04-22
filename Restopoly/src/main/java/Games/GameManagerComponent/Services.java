@@ -81,6 +81,7 @@ public class Services {
 
     public ServicesDTO toDTO(){
         return new ServicesDTO(
+                id,
                 game,
                 dice,
                 board,
@@ -92,4 +93,17 @@ public class Services {
     }
 
 
+    @Override
+    public String toString() {
+        return "Services{" +
+                "id='" + id + '\'' +
+                ", game='" + game + '\'' +
+                ", dice='" + dice + '\'' +
+                ", board='" + board + '\'' +
+                ", bank='" + bank + '\'' +
+                ", broker='" + broker + '\'' +
+                ", decks='" + decks + '\'' +
+                ", events='" + events + '\'' +
+                '}';
+    }
 }

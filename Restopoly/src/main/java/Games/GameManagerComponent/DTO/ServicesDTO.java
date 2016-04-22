@@ -14,14 +14,6 @@ public class ServicesDTO {
     private  String decks;
     private  String events;
 
-    public ServicesDTO(){
-        this(null,null,null,null,null,null,null);
-    }
-
-    public ServicesDTO(String game, String dice, String board, String bank, String broker, String decks, String events){
-        this(null,game,dice,board,bank,broker,decks,events);
-    }
-
     public ServicesDTO(String id, String game, String dice, String board, String bank, String broker, String decks, String events) {
         this.id = id;
         this.game = game;
@@ -33,6 +25,8 @@ public class ServicesDTO {
         this.events = events;
     }
 
+    public ServicesDTO() {
+    }
 
     public void setId(String id) {
         this.id = id;
@@ -96,5 +90,19 @@ public class ServicesDTO {
 
     public String getEvents() {
         return events;
+    }
+
+    @Override
+    public String toString() {
+        return "ServicesDTO{" +
+                "id='" + id + '\'' +
+                ", game='" + game + '\'' +
+                ", dice='" + dice + '\'' +
+                ", board='" + board + '\'' +
+                ", bank='" + bank + '\'' +
+                ", broker='" + broker + '\'' +
+                ", decks='" + decks + '\'' +
+                ", events='" + events + '\'' +
+                '}';
     }
 }

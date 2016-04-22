@@ -1,28 +1,22 @@
 package Games.GameManagerComponent.DTO;
 
 import Games.GameManagerComponent.Components;
+import com.sun.istack.internal.Nullable;
 
 /**
  * Created by dima on 12.04.16.
  */
 public class ComponentsDTO {
 
-    private  String id;
-    private  String game;
-    private  String dice;
-    private  String board;
-    private  String bank;
-    private  String broker;
-    private  String decks;
-    private  String events;
+    private String id;
+    private String game;
+    private String dice;
+    private String board;
+    private String bank;
+    private String broker;
+    private String decks;
+    private String events;
 
-    public ComponentsDTO(){
-        this(null,null,null,null,null,null,null);
-    }
-
-    public ComponentsDTO(String game, String dice, String board, String bank, String broker, String decks, String events){
-        this(null,game,dice,board,bank,broker,decks,events);
-    }
 
     public ComponentsDTO(String id, String game, String dice, String board, String bank, String broker, String decks, String events) {
         this.game = game;
@@ -32,6 +26,9 @@ public class ComponentsDTO {
         this.broker = broker;
         this.decks = decks;
         this.events = events;
+    }
+
+    public ComponentsDTO(){
     }
 
     public void setId(String id) {
@@ -96,5 +93,19 @@ public class ComponentsDTO {
 
     public String getEvents() {
         return events;
+    }
+
+    @Override
+    public String toString() {
+        return "ComponentsDTO{" +
+                "id='" + id + '\'' +
+                ", game='" + game + '\'' +
+                ", dice='" + dice + '\'' +
+                ", board='" + board + '\'' +
+                ", bank='" + bank + '\'' +
+                ", broker='" + broker + '\'' +
+                ", decks='" + decks + '\'' +
+                ", events='" + events + '\'' +
+                '}';
     }
 }
