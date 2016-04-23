@@ -44,6 +44,8 @@ public class Main {
         get("/games/:gameID", (req,res) -> {
             res.status(200);
             String gameID = req.params(":gameID");
+            gameID = "games/"+gameID;
+
             String game   = gameManager.getGameById(gameID); // muss GameNotFoundException werfen wenn nicht gefunden
             return game;
         });
@@ -56,6 +58,8 @@ public class Main {
             res.status(200); // if found
 
             String gameID = req.params(":gameID");
+            gameID = "games/"+gameID;
+
             String status = gameManager.getGameStatusByGameId(gameID); // muss GameNotFoundException werfen wenn nicht gefunden
             return status;
         });
@@ -70,6 +74,8 @@ public class Main {
 
             res.status(200); // The change has been applied
             String gameID = req.params(":gameID");
+            gameID = "games/"+gameID;
+
             gameManager.setGameStatusByGameId(gameID);
 
             return "The change has been applied";
@@ -83,6 +89,7 @@ public class Main {
             res.header("Content-Type","application/json");
             res.status(200);
             String gameID = req.params(":gameID");
+            gameID = "games/"+gameID;
 
             String services = gameManager.getServicesByGameId(gameID); // muss GameNotFoundException werfen wenn nicht gefunden
             return services;
@@ -96,6 +103,7 @@ public class Main {
 
             res.status(200);
             String gameID = req.params(":gameID");
+            gameID = "games/"+gameID;
 
             gameManager.setServicesToGame(gameID, req.body()); // muss GameNotFoundException werfen wenn nicht gefunden
             return "OK";
@@ -109,6 +117,8 @@ public class Main {
             res.header("Content-Type","application/json");
 
             String gameID = req.params(":gameID");
+            gameID = "games/"+gameID;
+
             String components = gameManager.getComponentsByGameId(gameID); // muss GameNotFoundException werfen wenn nicht gefunden
             return components;
         });
@@ -121,6 +131,8 @@ public class Main {
 
             res.status(200);
             String gameID = req.params(":gameID");
+            gameID = "games/"+gameID;
+
             gameManager.setComponentsToGame(gameID,req.body());  // muss GameNotFoundException werfen wenn nicht gefunden
 
             return "OK";
@@ -134,6 +146,8 @@ public class Main {
             res.header("Content-Type","application/json");
 
             String gameID = req.params(":gameID");
+            gameID = "games/"+gameID;
+
             String players = gameManager.getPlayersByGameId(gameID); // muss GameNotFoundException werfen wenn nicht gefunden
 
             return players;
@@ -146,6 +160,8 @@ public class Main {
             if(!req.headers("Content-Type").equals("application/json")) throw new WrongContentTypeException();
 
             String gameID = req.params(":gameID");
+            gameID = "games/"+gameID;
+
             String player = gameManager.createPlayer(gameID,req.body()); // muss GameNotFoundException werfen wenn nicht gefunden
 
             if(!player.isEmpty()){
@@ -158,73 +174,6 @@ public class Main {
         });
 
         /**
-         * Gets a player
-         */
-        get("/games/:gameID/players/:playerID", (req,res) -> {
-            res.status(200);
-            res.header("Content-Type","application/json");
-
-            String gameID = req.params(":gameID");
-            String playerID = req.params(":playerID");
-
-            String player = gameManager.getPlayer(gameID,playerID); // muss GameNotFoundException werfen wenn nicht gefunden
-                                                                    // muss PlayerNotFoundException werfen wenn nicht gefunden
-            return player;
-        });
-
-        /**
-         * places a player
-         */
-        put("/games/:gameID/players/:playerID", (req,res) -> {
-            if(!req.headers("Content-Type").equals("application/json")) throw new WrongContentTypeException();
-
-            res.status(200);
-            String gameID = req.params(":gameID");
-            String playerID = req.params(":playerID");
-
-            gameManager.updatePlayer(gameID,playerID,req.body());   // muss GameNotFoundException werfen wenn nicht gefunden
-                                                                    // muss PlayerNotFoundException werfen wenn nicht gefunden
-            return "OK";
-        });
-
-        /**
-         * Removes the player from the game
-         */
-        delete("/games/:gameID/players/:playerID", (req,res) -> {
-
-            res.status(200);
-            String gameID = req.params(":gameID");
-            String playerID = req.params(":playerID");
-            gameManager.removePlayer(gameID,playerID);  // muss GameNotFoundException werfen wenn nicht gefunden
-                                                        // muss PlayerNotFoundException werfen wenn nicht gefunden
-            return "OK";
-        });
-
-        /**
-         * tells if the player is ready to start the game
-         */
-        get("/games/:gameID/players/:playerID/ready" , (req,res) -> {
-            res.status(200);
-            String gameID = req.params(":gameID");
-            String playerID = req.params(":playerID");
-
-            boolean isReady = gameManager.isPlayerReady(gameID,playerID);   // muss GameNotFoundException werfen wenn nicht gefunden             // muss PlayerNotFoundException werfen wenn nicht gefunden
-            return isReady;
-        });
-
-        /**
-         * signals that the player is ready to start the game / is finished with his turn
-         */
-        put("/games/:gameID/players/:playerID/ready" , (req,res) -> {
-            res.status(200);
-            String gameID = req.params(":gameID");
-            String playerID = req.params(":playerID");
-            gameManager.signalPlayerState(gameID,playerID); // muss GameNotFoundException werfen wenn nicht gefunden
-                                                            // muss PlayerNotFoundException werfen wenn nicht gefunden
-            return "OK";
-        });
-
-        /**
          * gets the currently active player that shall take action
          */
         get("/games/:gameID/players/current", (req,res) -> {
@@ -232,6 +181,10 @@ public class Main {
             res.header("Content-Type","application/json");
 
             String gameID = req.params(":gameID");
+            gameID = "games/"+gameID;
+
+            System.out.println("_____");
+
             String player = gameManager.getCurrentPlayer(gameID);   // muss GameNotFoundException werfen wenn nicht gefunden
             return player;
         });
@@ -244,6 +197,8 @@ public class Main {
             res.header("Content-Type","application/json");
 
             String gameID = req.params(":gameID");
+            gameID = "games/"+gameID;
+
             String player = gameManager.getPlayersTurn(gameID); // muss GameNotFoundException werfen wenn nicht gefunden
             // TODO -> was passiert wenn keiner den MUTEX hällt ? (momentan wird 404 Exception PlayerNotFoundException geworfen!)
             return player;
@@ -256,13 +211,9 @@ public class Main {
             if(req.queryMap().toMap().isEmpty() || !req.queryMap().toMap().containsKey("player")) throw new QuerryParamsNotFound();
 
             String gameID = req.params(":gameID");
-            String playerID = req.queryParams("player");
+            gameID = "games/"+gameID;
 
-            boolean isMutexReleased = gameManager.isMutexReleased(gameID);
-            if(!isMutexReleased){
-                res.status(409); // Conflict
-                return "already aquired by an other player";
-            }
+            String playerID = req.queryParams("player");
 
             boolean isAquired = gameManager.setPlayerTurn(gameID,playerID);
 
@@ -281,10 +232,97 @@ public class Main {
         delete("/games/:gameID/players/turn",(req,res) -> {
 
             String gameID = req.params(":gameID");
+            gameID = "games/"+gameID;
+
             gameManager.removePlayerTurn(gameID);
 
             return "OK removed";
         });
+
+        /**
+         * Gets a player
+         */
+        get("/games/:gameID/players/:playerID", (req,res) -> {
+            res.status(200);
+            res.header("Content-Type","application/json");
+
+            String gameID = req.params(":gameID");
+            gameID = "games/"+gameID;
+
+            String playerID = req.params(":playerID");
+            playerID = gameID+"/players/"+playerID;
+
+            String player = gameManager.getPlayer(gameID,playerID); // muss GameNotFoundException werfen wenn nicht gefunden
+                                                                    // muss PlayerNotFoundException werfen wenn nicht gefunden
+            return player;
+        });
+
+        /**
+         * places a player
+         */
+        put("/games/:gameID/players/:playerID", (req,res) -> {
+            if(!req.headers("Content-Type").equals("application/json")) throw new WrongContentTypeException();
+
+            res.status(200);
+            String gameID = req.params(":gameID");
+            gameID = "games/"+gameID;
+
+            String playerID = req.params(":playerID");
+            playerID = gameID+"/players/"+playerID;
+
+            gameManager.updatePlayer(gameID,playerID,req.body());   // muss GameNotFoundException werfen wenn nicht gefunden
+                                                                    // muss PlayerNotFoundException werfen wenn nicht gefunden
+            return "OK";
+        });
+
+        /**
+         * Removes the player from the game
+         */
+        delete("/games/:gameID/players/:playerID", (req,res) -> {
+
+            res.status(200);
+            String gameID = req.params(":gameID");
+            gameID = "games/"+gameID;
+
+            String playerID = req.params(":playerID");
+            playerID = gameID+"/players/"+playerID;
+
+            gameManager.removePlayer(gameID,playerID);  // muss GameNotFoundException werfen wenn nicht gefunden
+                                                        // muss PlayerNotFoundException werfen wenn nicht gefunden
+            return "OK";
+        });
+
+        /**
+         * tells if the player is ready to start the game
+         */
+        get("/games/:gameID/players/:playerID/ready" , (req,res) -> {
+            res.status(200);
+            String gameID = req.params(":gameID");
+            gameID = "games/"+gameID;
+
+            String playerID = req.params(":playerID");
+            playerID = gameID+"/players/"+playerID;
+
+            boolean isReady = gameManager.isPlayerReady(gameID,playerID);   // muss GameNotFoundException werfen wenn nicht gefunden             // muss PlayerNotFoundException werfen wenn nicht gefunden
+            return isReady;
+        });
+
+        /**
+         * signals that the player is ready to start the game / is finished with his turn
+         */
+        put("/games/:gameID/players/:playerID/ready" , (req,res) -> {
+            res.status(200);
+            String gameID = req.params(":gameID");
+            gameID = "games/"+gameID;
+
+            String playerID = req.params(":playerID");
+            playerID = gameID+"/players/"+playerID;
+
+            gameManager.signalPlayerState(gameID,playerID); // muss GameNotFoundException werfen wenn nicht gefunden
+                                                            // muss PlayerNotFoundException werfen wenn nicht gefunden
+            return "OK";
+        });
+
 
         /****** EXCEPTION BEHANDLUNG *******/
         exception(GameNotFoundException.class, (ex,req,res) -> {
@@ -320,6 +358,12 @@ public class Main {
         exception(PlayerSequenceWrongException.class, (ex,req,res) -> {
             res.status(409); // Conflict
             res.body("Wrong player turn");
+            ex.printStackTrace();
+        });
+
+        exception(MutexNotReleasedException.class, (ex,req,res) -> {
+            res.status(409); // Conflict
+            res.body("already aquired by an other player");
             ex.printStackTrace();
         });
 

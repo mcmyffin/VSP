@@ -1,7 +1,7 @@
 package Games.GameManagerComponent;
 
 import Games.Exceptions.GameStateException;
-import Games.Exceptions.ParseException;
+import Games.Exceptions.MutexNotReleasedException;
 import Games.Exceptions.PlayerNotFoundException;
 import Games.Exceptions.PlayerSequenceWrongException;
 import Games.GameManagerComponent.DTO.GameCreateDTO;
@@ -122,17 +122,19 @@ public class Game {
         return mutex.isReleased();
     }
 
-    public synchronized boolean setMutex(Player p) throws PlayerSequenceWrongException {
+    public synchronized boolean setMutex(Player p) throws PlayerSequenceWrongException, MutexNotReleasedException {
         checkNotNull(p);
-        if(!mutex.getPlayerID().equals(p.getId())) throw new PlayerSequenceWrongException();
-        if(!getPlayerManager().getCurrentPlayer().equals(p)) throw new PlayerSequenceWrongException();
+        if(!mutex.isReleased()){
+            if(mutex.getPlayerID().equals(p.getId())) return false; // bereits erworben
+            else throw new MutexNotReleasedException(); //
+        }
 
-        if(mutex.getPlayerID().equals(p.getId())) return false;
+        if(!getPlayerManager().getCurrentPlayer().equals(p)) throw new PlayerSequenceWrongException();
         return mutex.acquire(p.getId());
     }
 
     public synchronized void removeMutex(){
-        removeMutex();
+        mutex.release();
     }
 
 
@@ -146,7 +148,7 @@ public class Game {
 
         }else if(status.equals(GameStatus.RUNNING)){
 
-            if(isGameEndCreateriaReached()) tryToStopGame();
+            if(isGameEndCreteriaReached()) tryToStopGame();
             else throw new GameStateException();
         }else{
 
@@ -172,7 +174,7 @@ public class Game {
         throw new UnsupportedOperationException();
     }
 
-    private boolean isGameEndCreateriaReached(){
+    private boolean isGameEndCreteriaReached(){
         // TODO
         throw new UnsupportedOperationException();
     }
@@ -198,7 +200,7 @@ enum GameStatus {
 
 class Mutex{
 
-    private String playerID;
+    private String playerID = "";
 
     synchronized boolean acquire(String playerID){
         checkNotNull(playerID);

@@ -78,8 +78,7 @@ public class GameManager {
     private void createGame(@NotNull GameCreateDTO gameCreateDTO){
 
         // create ID's
-        String id = Integer.toString(gamesMap.size());
-        String gamesId = "games/"+id;
+        String gamesId = "games/"+gamesMap.size();
         String playersId = gamesId+"/players";
         String servicesId = gamesId+"/services";
         String componentsId = gamesId+"/components";
@@ -102,7 +101,7 @@ public class GameManager {
         g.setComponents(Components.fromDTO(componentsDTO));
         g.setServices(Services.fromDTO(servicesDTO));
 
-        gamesMap.put(id,g);
+        gamesMap.put(gamesId,g);
     }
 
 
@@ -310,7 +309,7 @@ public class GameManager {
         return g.isMutexReleased();
     }
 
-    public boolean setPlayerTurn(String gameID, String playerID) throws GameNotFoundException, PlayerNotFoundException, PlayerSequenceWrongException {
+    public boolean setPlayerTurn(String gameID, String playerID) throws GameNotFoundException, PlayerNotFoundException, PlayerSequenceWrongException, MutexNotReleasedException {
 
         Game g = getGameObjectById(gameID);
         Player player = g.getPlayerManager().getPlayerById(playerID);

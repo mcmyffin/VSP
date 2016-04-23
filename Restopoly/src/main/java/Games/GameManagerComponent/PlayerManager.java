@@ -29,17 +29,20 @@ public class PlayerManager {
         checkNotNull(playerDTO);
         if(playerMap.size() > maxPlayer) return "";
 
-        playerDTO.setId(id+"/"+playerMap.size());
-        playerDTO.setReady("false");
+
+        String playerID = this.id+"/"+playerMap.size() ;
+
+        playerDTO.setId(playerID);
         Player player = Player.fromDTO(playerDTO);
 
-        playerMap.put(player.getId(),player);
+        playerMap.put(playerID,player);
         playerQueue.offer(player);
         return player.getId();
     }
 
     public synchronized void removePlayer(String playerID) throws PlayerNotFoundException {
         checkNotNull(playerID);
+
         if(!playerMap.containsKey(playerID)) throw new PlayerNotFoundException();
         Player p = playerMap.remove(playerID);
         playerQueue.remove(p);
@@ -72,7 +75,7 @@ public class PlayerManager {
         for(Player p : playerMap.values()){
             if(!p.isReady()) return false;
         }
-        return true;
+        return true && (playerMap.size() >= minPlayer);
     }
 
     synchronized Player getNextPlayer(){

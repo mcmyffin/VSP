@@ -57,6 +57,7 @@ public class PlayerDTO {
     }
 
     public String getReady() {
+        if(ready == null) ready = "false";
         return ready;
     }
 }
