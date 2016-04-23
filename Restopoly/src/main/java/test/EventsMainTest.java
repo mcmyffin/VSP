@@ -32,7 +32,7 @@ public class EventsMainTest {
 
     @Test
     public void testPostGetEvents() throws UnirestException {
-        EventDTO eventDTO = new EventDTO(GAME+1,TYPE+1,NAME+1,REASON+1,RESOURCE+1);
+        EventDTO eventDTO = new EventDTO(GAME+1,TYPE+1,NAME+1,REASON+1,RESOURCE+1,null,null);
 
         Gson g = new Gson();
         String s = g.toJson(eventDTO);
