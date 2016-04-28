@@ -1,9 +1,16 @@
 package Games.GameManagerComponent;
 
-import Games.Exceptions.*;
+import Common.Exceptions.*;
 import Games.GameManagerComponent.DTO.*;
+import Games.Main;
+import YellowPage.RegistrationService;
+import YellowPage.YellowPageDTO;
+import YellowPage.YellowPageService;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
+import com.mashape.unirest.http.HttpResponse;
+import com.mashape.unirest.http.Unirest;
+import com.mashape.unirest.http.exceptions.UnirestException;
 import com.sun.istack.internal.NotNull;
 
 import java.util.*;
@@ -75,7 +82,7 @@ public class GameManager {
 
 
 
-    private void createGame(@NotNull GameCreateDTO gameCreateDTO){
+    private Game createGame(@NotNull GameCreateDTO gameCreateDTO){
 
         // create ID's
         String gamesId = "games/"+gamesMap.size();
@@ -102,9 +109,53 @@ public class GameManager {
         g.setServices(Services.fromDTO(servicesDTO));
 
         gamesMap.put(gamesId,g);
+        return g;
     }
 
 
+    private void createBankAccount(String gameID, String playerID) {
+        checkNotNull(gameID);
+        checkNotNull(playerID);
+
+        try {
+            Game g = getGameObjectById(gameID);
+            Player p = g.getPlayerManager().getPlayerById(playerID);
+            int defaultSaldo = 3000;
+
+            HttpResponse<String> response = Unirest.post(g.getComponents().getBank())
+                    .body("{ \"player\":\"" + playerID + "\" , \"saldo\": \"" + defaultSaldo + "\"}").asString();
+
+            if (response.getStatus() == 201) {
+                String account = response.getHeaders().get("Location").get(0);
+                p.setAccount(account);
+            }
+
+        }catch (GameNotFoundException| UnirestException|PlayerNotFoundException ex){
+            ex.printStackTrace();
+        }
+    }
+
+    private void createPawn(String gameID, String playerID){
+        checkNotNull(gameID);
+        checkNotNull(playerID);
+
+        try {
+            Game g = getGameObjectById(gameID);
+            Player p = g.getPlayerManager().getPlayerById(playerID);
+
+            HttpResponse<String> response = Unirest.post(g.getComponents().getBoard())
+                                                .body("{\"player\":\""+playerID+"\"}")
+                                                .asString();
+            // if is created Response Status
+            if(response.getStatus() == 201){
+                String pawn = response.getHeaders().get("Location").get(0);
+                p.setPawn(pawn);
+            }
+
+        }catch (GameNotFoundException|PlayerNotFoundException|UnirestException ex){
+            ex.printStackTrace();
+        }
+    }
 
     /*********************************/
 
@@ -120,13 +171,78 @@ public class GameManager {
     }
 
 
-    public void createGame(String gameJsonString) throws WrongFormatException {
+    public String createGame(String gameJsonString) throws WrongFormatException {
 
         try{
             GameCreateDTO gameDTO = gson.fromJson(gameJsonString, GameCreateDTO.class);
-            createGame(gameDTO);
 
-            // TODO registrieren bei Spielbrett service
+            Game game = createGame(gameDTO);
+            Services services = game.getServices();
+            Components components = game.getComponents();
+
+
+            services.setGame(Main.URLService);
+            components.setGame(Main.URL+"/"+game.getId());
+
+            try{
+                //
+                List<YellowPageDTO> groupServices = YellowPageService.getServicesByGroupName(Main.name);
+                for(YellowPageDTO dto : groupServices){
+
+                    // events
+                    if(dto.getService().equals("events")) services.setEvent(dto.get_uri());
+                    // decks
+                    if(dto.getService().equals("decks")) services.setDeck(dto.get_uri());
+                    // banks
+                    if(dto.getService().equals("banks")) services.setBank(dto.get_uri());
+                    // boards
+                    if(dto.getService().equals("boards")) services.setBoard(dto.get_uri());
+                    // broker
+                    if(dto.getService().equals("broker")) services.setBroker(dto.get_uri());
+                    // dice
+                    if(dto.getService().equals("dice")) services.setDice(dto.get_uri());
+
+                }
+
+                String jsonRegistrationObject = "{\"game\":\""+Main.URL+"/"+game.getId()+"\"}";
+
+                // dice
+                if(services.getDice() != null){
+                    String component = RegistrationService.sendPost(services.getDice(),jsonRegistrationObject);
+                    components.setDice(component);
+                }
+
+                // bank
+                if (services.getBank() != null){
+                    String component = RegistrationService.sendPost(services.getBank(),jsonRegistrationObject);
+                    components.setBank(component);
+                }
+                // board
+                if(services.getBoard() != null){
+                    String component = RegistrationService.sendPost(services.getBoard(),jsonRegistrationObject);
+                    components.setBoard(component);
+                }
+                // broker
+                if(services.getBroker() != null){
+                    String component = RegistrationService.sendPost(services.getBroker(),jsonRegistrationObject);
+                    components.setBroker(component);
+                }
+                // deck
+                if(services.getDeck() != null){
+                    String component = RegistrationService.sendPost(services.getDeck(),jsonRegistrationObject);
+                    components.setDeck(component);
+                }
+                // event
+                if(services.getEvent() != null){
+                    String component = RegistrationService.sendPost(services.getEvent(),jsonRegistrationObject);
+                    components.setEvent(component);
+                }
+
+            }catch (UnirestException ex){
+
+            }
+
+            return game.getId();
 
         }catch (JsonSyntaxException ex){
             throw new WrongFormatException("Game format wrong");
@@ -134,6 +250,7 @@ public class GameManager {
     }
 
     public String getGameById(String gameID) throws GameNotFoundException {
+
         Game g =  getGameObjectById(gameID);
         GameDTO gameDTO = g.toDTO();
         return gson.toJson(gameDTO);
@@ -218,7 +335,7 @@ public class GameManager {
         return gson.toJson(playerDTOCollection);
     }
 
-    public String createPlayer(String gameID, String playerJsonString) throws GameNotFoundException, WrongFormatException {
+    public String createPlayer(String gameID, String playerJsonString) throws GameNotFoundException, WrongFormatException, GameFullException {
 
         try{
             PlayerDTO playerDTO = gson.fromJson(playerJsonString,PlayerDTO.class);
@@ -227,12 +344,14 @@ public class GameManager {
             PlayerManager playerManager = g.getPlayerManager();
             String playerID = playerManager.addPlayer(playerDTO);
 
-            try{
-                Player p = playerManager.getPlayerById(playerID);
-                return gson.toJson(p.toDTO());
-            }catch (PlayerNotFoundException ex){
-                return "";
-            }
+
+            // Bankaccount für Player erstellen
+            createBankAccount(gameID,playerID);
+
+            // Pawn für Player erstellen
+            createPawn(gameID,playerID);
+
+            return playerID;
 
         }catch (JsonSyntaxException ex){
             throw new WrongFormatException();

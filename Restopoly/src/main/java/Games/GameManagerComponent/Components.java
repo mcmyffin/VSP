@@ -99,11 +99,11 @@ public class Components {
         this.broker = broker;
     }
 
-    public void setDecks(String decks) {
+    public void setDeck(String decks) {
         this.decks = decks;
     }
 
-    public void setEvents(String events) {
+    public void setEvent(String events) {
         this.events = events;
     }
 

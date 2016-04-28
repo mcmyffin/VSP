@@ -1,19 +1,43 @@
 package Events; /**
  * Created by dima on 05.04.16.
  */
+//import Common.Abstract.MainAbstract;
+import Common.Abstract.MainAbstract;
+import Common.Util.IPFinder;
 import Events.EventManagerComponent.EventManager;
+import YellowPage.RegistrationService;
+import YellowPage.YellowPageService;
 
 import static spark.Spark.*;
-public class Main {
+public class Main extends MainAbstract {
+
+    public static int port = 4568;
+    public static String ip = IPFinder.getIP();
+
+    public static String name = "group_42";
+    public static String description = "Manage Events";
+    public static String service = "events";
+
+    public static String URL = "http://"+ip+":"+port;
+    public static String URLService = URL+"/events";
+
+
+    public Main(){
+        super(port,ip,name,description,service,URLService);
+    }
 
 
     public static void main(String[] args) {
+
+        port(port);
+
+        Main main = new Main();
         EventManager eventManager = new EventManager();
-        RegistrationService service = new RegistrationService("http://172.18.0.8:4567/services");
+        RegistrationService registrationService = new RegistrationService(main);
+        registrationService.startRegistration();
 
-        port(4567);
 
-        service.signIn();
+        YellowPageService.startListening();
 
         get("/events", (req,res) ->  {
             res.status(200);
@@ -23,9 +47,10 @@ public class Main {
         });
 
         post("/events", (req,res) -> {
-            String jsonBody = req.body();
-            eventManager.addEvent(jsonBody);
             res.status(201);
+            String jsonBody = req.body();
+            String eventID = eventManager.addEvent(jsonBody);
+            res.header("Location",URL+"/"+eventID);
             return "";
         });
 
@@ -50,6 +75,7 @@ public class Main {
             // todo rest api in yaml/raml
             return "TODO";
         });
+
 
         exception(Exception.class, (ex, req,res) -> {
             res.status(400);

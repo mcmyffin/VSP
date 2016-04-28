@@ -23,7 +23,7 @@ public class EventManager {
 
 
 
-    public void addEvent(String jsonBody) {
+    public String addEvent(String jsonBody) {
         checkNotNull(jsonBody);
 
         Gson gson = new Gson();
@@ -43,6 +43,7 @@ public class EventManager {
                             );
 
         eventMap.put(mapID,e);
+        return eventID;
     }
 
 
@@ -195,7 +196,15 @@ public class EventManager {
         Event e = eventMap.get(eventID);
         if(e == null) return "";
 
+
+        String jsonObj = "";
+
         Gson g = new Gson();
+
+
+        EventDTO eventDTO = g.fromJson(jsonObj,EventDTO.class);
+
+
         return g.toJson(e.toDTO());
     }
 }

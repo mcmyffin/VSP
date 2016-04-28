@@ -1,6 +1,7 @@
 package Games.GameManagerComponent;
 
-import Games.Exceptions.PlayerNotFoundException;
+import Common.Exceptions.GameFullException;
+import Common.Exceptions.PlayerNotFoundException;
 import Games.GameManagerComponent.DTO.PlayerDTO;
 
 import java.util.*;
@@ -25,9 +26,9 @@ public class PlayerManager {
         this.playerQueue = new LinkedList();
     }
 
-    public synchronized String addPlayer(PlayerDTO playerDTO){
+    public synchronized String addPlayer(PlayerDTO playerDTO) throws GameFullException {
         checkNotNull(playerDTO);
-        if(playerMap.size() > maxPlayer) return "";
+        if(playerMap.size() > maxPlayer) throw new GameFullException();
 
 
         String playerID = this.id+"/"+playerMap.size() ;

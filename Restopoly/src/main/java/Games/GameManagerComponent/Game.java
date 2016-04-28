@@ -1,9 +1,9 @@
 package Games.GameManagerComponent;
 
-import Games.Exceptions.GameStateException;
-import Games.Exceptions.MutexNotReleasedException;
-import Games.Exceptions.PlayerNotFoundException;
-import Games.Exceptions.PlayerSequenceWrongException;
+import Common.Exceptions.GameStateException;
+import Common.Exceptions.MutexNotReleasedException;
+import Common.Exceptions.PlayerNotFoundException;
+import Common.Exceptions.PlayerSequenceWrongException;
 import Games.GameManagerComponent.DTO.GameCreateDTO;
 import Games.GameManagerComponent.DTO.GameDTO;
 

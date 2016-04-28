@@ -1,6 +1,10 @@
 package Games;
-import Games.Exceptions.*;
+import Common.Abstract.MainAbstract;
+import Common.Exceptions.*;
+import Common.Util.IPFinder;
 import Games.GameManagerComponent.GameManager;
+import YellowPage.RegistrationService;
+import YellowPage.YellowPageService;
 
 import static spark.Spark.*;
 
@@ -8,11 +12,31 @@ import static spark.Spark.*;
  * Created by dima on 12.04.16.
  */
 
-public class Main {
+public class Main extends MainAbstract{
+
+    public static int    port = 4568;
+    public static String ip = IPFinder.getIP();
+
+    public static String name = "group_42";
+    public static String description = "Games Manager";
+    public static String service = "games";
+
+    public static String URL = "http://"+ip+":"+port;
+    public static String URLService = URL+"/games";
+
+    public Main(){
+        super(port,ip,name,description,service,URLService);
+    }
 
     public static void main(String[] args) {
-        GameManager gameManager = new GameManager();
+        port(port);
 
+        GameManager gameManager = new GameManager();
+        Main main = new Main();
+        RegistrationService registrationService = new RegistrationService(main);
+
+        registrationService.startRegistration();
+        YellowPageService.startListening();
 
         /**
          * returns all available games
@@ -32,8 +56,8 @@ public class Main {
             res.status(201);
 
             String gameJsonString = req.body();
-            gameManager.createGame(gameJsonString); // throws WrongFormatException
-
+            String gameID = gameManager.createGame(gameJsonString); // throws WrongFormatException
+            res.header("Location",URL+"/"+gameID);
             return "OK";
         });
 
@@ -158,19 +182,15 @@ public class Main {
          */
         post("/games/:gameID/players", (req,res) -> {
             if(!req.headers("Content-Type").equals("application/json")) throw new WrongContentTypeException();
+            res.status(200);
 
             String gameID = req.params(":gameID");
             gameID = "games/"+gameID;
 
-            String player = gameManager.createPlayer(gameID,req.body()); // muss GameNotFoundException werfen wenn nicht gefunden
+            String playerID = gameManager.createPlayer(gameID,req.body()); // muss GameNotFoundException werfen wenn nicht gefunden
+            res.header("Location",URL+"/"+playerID);
 
-            if(!player.isEmpty()){
-                res.status(200);
-                return player;
-            }else{
-                res.status(409); // Conflict (Game is full)
-                return "Game full";
-            }
+            return "Player created";
         });
 
         /**
@@ -325,7 +345,7 @@ public class Main {
 
 
         /****** EXCEPTION BEHANDLUNG *******/
-        exception(GameNotFoundException.class, (ex,req,res) -> {
+        exception(GameNotFoundException.class, (ex, req, res) -> {
             res.status(404);
             res.body("Game not found");
             ex.printStackTrace();
@@ -355,28 +375,30 @@ public class Main {
             ex.printStackTrace();
         });
 
-        exception(PlayerSequenceWrongException.class, (ex,req,res) -> {
+        exception(PlayerSequenceWrongException.class, (ex, req, res) -> {
             res.status(409); // Conflict
             res.body("Wrong player turn");
             ex.printStackTrace();
         });
 
-        exception(MutexNotReleasedException.class, (ex,req,res) -> {
+        exception(MutexNotReleasedException.class, (ex, req, res) -> {
             res.status(409); // Conflict
             res.body("already aquired by an other player");
             ex.printStackTrace();
         });
 
-        exception(GameStateException.class, (ex,req,res) -> {
+        exception(GameStateException.class, (ex, req, res) -> {
             res.status(409); // Conflict
             res.body("Conflicting situation, such as at least one player is not ready or ending criteria not reached");
             ex.printStackTrace();
         });
 
-        exception(UnsupportedOperationException.class, (ex,req,res) -> {
-            res.status(501); // not implemented
-            res.body("Not implemented Method");
+
+        exception(GameFullException.class, (ex,req,res) -> {
+            res.status(409); // Conflict (Game is full)
+            res.body("Maximum player count reached!");
             ex.printStackTrace();
         });
+
     }
 }

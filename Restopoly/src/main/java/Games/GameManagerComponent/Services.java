@@ -70,14 +70,41 @@ public class Services {
         return broker;
     }
 
-    public String getDecks() {
+    public String getDeck() {
         return decks;
     }
 
-    public String getEvents() {
+    public String getEvent() {
         return events;
     }
 
+    public void setGame(String game) {
+        this.game = game;
+    }
+
+    public void setDice(String dice) {
+        this.dice = dice;
+    }
+
+    public void setBoard(String board) {
+        this.board = board;
+    }
+
+    public void setBank(String bank) {
+        this.bank = bank;
+    }
+
+    public void setBroker(String broker) {
+        this.broker = broker;
+    }
+
+    public void setDeck(String decks) {
+        this.decks = decks;
+    }
+
+    public void setEvent(String events) {
+        this.events = events;
+    }
 
     public ServicesDTO toDTO(){
         return new ServicesDTO(

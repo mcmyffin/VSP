@@ -1,4 +1,4 @@
-package Games.Exceptions;
+package Common.Exceptions;
 
 /**
  * Created by dima on 12.04.16.
