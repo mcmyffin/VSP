@@ -22,12 +22,14 @@ public class MainAbstract {
         checkNotNull(name);
         checkNotNull(description);
         checkNotNull(service);
+        checkNotNull(urlService);
 
         this.port = port;
         this.ip = ip;
         this.name = name;
         this.description = description;
         this.service = service;
+        this.urlService = urlService;
     }
 
     public int getPort() {
