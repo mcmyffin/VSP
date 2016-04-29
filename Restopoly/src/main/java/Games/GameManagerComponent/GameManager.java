@@ -189,51 +189,52 @@ public class GameManager {
                 List<YellowPageDTO> groupServices = YellowPageService.getServicesByGroupName(Main.name);
                 for(YellowPageDTO dto : groupServices){
 
-                    // events
-                    if(dto.getService().equals("events")) services.setEvent(dto.get_uri());
-                    // decks
-                    if(dto.getService().equals("decks")) services.setDeck(dto.get_uri());
-                    // banks
-                    if(dto.getService().equals("banks")) services.setBank(dto.get_uri());
-                    // boards
-                    if(dto.getService().equals("boards")) services.setBoard(dto.get_uri());
-                    // broker
-                    if(dto.getService().equals("broker")) services.setBroker(dto.get_uri());
-                    // dice
-                    if(dto.getService().equals("dice")) services.setDice(dto.get_uri());
+                    System.out.println(dto.getUri());
 
+                    // events
+                    if(dto.getService().equals("events")) services.setEvent(dto.getUri());
+                    // decks
+                    if(dto.getService().equals("decks")) services.setDeck(dto.getUri());
+                    // banks
+                    if(dto.getService().equals("banks")) services.setBank(dto.getUri());
+                    // boards
+                    if(dto.getService().equals("boards")) services.setBoard(dto.getUri());
+                    // broker
+                    if(dto.getService().equals("broker")) services.setBroker(dto.getUri());
+                    // dice
+                    if(dto.getService().equals("dice")) services.setDice(dto.getUri());
                 }
 
                 String jsonRegistrationObject = "{\"game\":\""+Main.URL+"/"+game.getId()+"\"}";
 
                 // dice
-                if(services.getDice() != null){
+                if(services.getDice() != null && !services.getDice().isEmpty()){
                     String component = RegistrationService.sendPost(services.getDice(),jsonRegistrationObject);
                     components.setDice(component);
                 }
 
                 // bank
-                if (services.getBank() != null){
+                if (services.getBank() != null && !services.getBank().isEmpty()){
                     String component = RegistrationService.sendPost(services.getBank(),jsonRegistrationObject);
                     components.setBank(component);
                 }
                 // board
-                if(services.getBoard() != null){
+                if(services.getBoard() != null && !services.getBoard().isEmpty()){
                     String component = RegistrationService.sendPost(services.getBoard(),jsonRegistrationObject);
                     components.setBoard(component);
                 }
                 // broker
-                if(services.getBroker() != null){
+                if(services.getBroker() != null && !services.getBroker().isEmpty()){
                     String component = RegistrationService.sendPost(services.getBroker(),jsonRegistrationObject);
                     components.setBroker(component);
                 }
                 // deck
-                if(services.getDeck() != null){
+                if(services.getDeck() != null && !services.getDeck().isEmpty()){
                     String component = RegistrationService.sendPost(services.getDeck(),jsonRegistrationObject);
                     components.setDeck(component);
                 }
                 // event
-                if(services.getEvent() != null){
+                if(services.getEvent() != null && !services.getEvent().isEmpty()){
                     String component = RegistrationService.sendPost(services.getEvent(),jsonRegistrationObject);
                     components.setEvent(component);
                 }

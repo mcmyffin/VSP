@@ -19,12 +19,13 @@ import static spark.Spark.get;
 public class YellowPageService {
 
     public static String yellowPageURL = "http://172.18.0.5:4567/services";
+    public static String yelloPageAdress = "http://172.18.0.5:4567";
 
     public static String clearYellowPage() throws UnirestException {
 
         String txt = "";
         for(int i = 0; i <= 999 ; i++){
-            HttpResponse<String> response = Unirest.delete(yellowPageURL+i).body("").asString();
+            HttpResponse<String> response = Unirest.delete(yellowPageURL+"/"+i).body("").asString();
             txt += "<br>"+response.getBody()+"<br>";
         }
         return txt;
@@ -60,7 +61,10 @@ public class YellowPageService {
     public static YellowPageDTO getServiceURIByID(String yellowPageID) throws UnirestException {
         checkNotNull(yellowPageID);
 
-        HttpResponse<String> response = Unirest.get(yellowPageURL+"/"+yellowPageID).asString();
+        System.out.println("YelloPageService.java:65 : \n\t ID\t"+yellowPageID);
+        System.out.println("\t Adress\t"+yelloPageAdress);
+        System.out.println("\t URI\t"+yelloPageAdress+yellowPageID);
+        HttpResponse<String> response = Unirest.get(yelloPageAdress+yellowPageID).asString();
         if(response.getStatus() == 200){ // 200 = OK
 
             Gson g = new Gson();
@@ -70,7 +74,7 @@ public class YellowPageService {
         }
         System.err.println("service in yellowpage not found\ninvalid yellowpage ID !!!");
         System.err.println("ID = "+yellowPageID);
-        System.err.println("URI = "+yellowPageURL+"/"+yellowPageID);
+        System.err.println("URI = "+yelloPageAdress+yellowPageID);
         throw new RuntimeException("service in yellowpage not found\ninvalid yellowpage ID !!!");
     }
 }
