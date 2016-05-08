@@ -64,7 +64,8 @@ public class YellowPageService {
         System.out.println("YelloPageService.java:65 : \n\t ID\t"+yellowPageID);
         System.out.println("\t Adress\t"+yelloPageAdress);
         System.out.println("\t URI\t"+yelloPageAdress+yellowPageID);
-        HttpResponse<String> response = Unirest.get(yelloPageAdress+yellowPageID).asString();
+
+       HttpResponse<String> response = Unirest.get(yelloPageAdress+yellowPageID).asString();
         if(response.getStatus() == 200){ // 200 = OK
 
             Gson g = new Gson();

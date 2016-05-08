@@ -2,8 +2,7 @@ package Boards.BoardManagerComponent;
 
 import Boards.BoardManagerComponent.DTOs.FieldDTO;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -13,27 +12,41 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class Field {
 
     private Place place;
-    private List<Pawn> pawns;
+    private Map<String,Pawn> pawns; // String = pawnID
 
     public Field(Place place) {
         checkNotNull(place);
         this.place = place;
-        this.pawns = new ArrayList();
+        this.pawns = new HashMap();
     }
 
     public Place getPlace() {
         return place;
     }
-    public List<Pawn> getPawns() {
-        return pawns;
+    public Collection<Pawn> getPawns() {
+        return pawns.values();
     }
 
     void addPawn(Pawn pawn){
         checkNotNull(pawn);
-        pawns.add(pawn);
+
+        pawns.put(pawn.getId(),pawn);
+    }
+
+    boolean isPawnAtField(String pawnID){
+        checkNotNull(pawnID);
+        return pawns.containsKey(pawnID);
+    }
+
+    void removePawn(String pawnID){
+        pawns.remove(pawnID);
     }
 
     public FieldDTO toDTO(){
-        throw new UnsupportedOperationException();
+
+        return new FieldDTO(
+                place.getId(),
+                pawns.keySet()
+        );
     }
 }

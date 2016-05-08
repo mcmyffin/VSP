@@ -1,5 +1,8 @@
 package Boards.BoardManagerComponent;
 
+import Boards.BoardManagerComponent.DTOs.PlaceDTO;
+import Games.GameManagerComponent.DTO.PlayerDTO;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -33,4 +36,10 @@ public class Place {
         return broker;
     }
 
+    public PlaceDTO toDTO(){
+        return new PlaceDTO(
+                name,
+                broker
+        );
+    }
 }

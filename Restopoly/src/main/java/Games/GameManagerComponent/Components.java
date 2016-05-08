@@ -29,7 +29,7 @@ public class Components {
                 componentsDTO.getBank(),
                 componentsDTO.getBroker(),
                 componentsDTO.getDecks(),
-                componentsDTO.getEvents()
+                componentsDTO.getEvent()
         );
         return c;
     }

@@ -3,7 +3,7 @@ package Games.GameManagerComponent;
 import Common.Exceptions.GameStateException;
 import Common.Exceptions.MutexNotReleasedException;
 import Common.Exceptions.PlayerNotFoundException;
-import Common.Exceptions.PlayerSequenceWrongException;
+import Common.Exceptions.PlayersWrongTurnException;
 import Games.GameManagerComponent.DTO.GameCreateDTO;
 import Games.GameManagerComponent.DTO.GameDTO;
 
@@ -92,7 +92,7 @@ public class Game {
         this.components = components;
     }
 
-    public void signalPlayerState(Player p) throws PlayerSequenceWrongException {
+    public void signalPlayerState(Player p) throws PlayersWrongTurnException {
         checkNotNull(p);
 
         Player currentPlayer = getPlayerManager().getCurrentPlayer();
@@ -103,7 +103,7 @@ public class Game {
 
         }else if(getStatus().equals(GameStatus.RUNNING)){
 
-            if(!currentPlayer.equals(p)) throw new PlayerSequenceWrongException();
+            if(!currentPlayer.equals(p)) throw new PlayersWrongTurnException();
             mutex.release();
             playerManager.getNextPlayer();
 
@@ -122,14 +122,14 @@ public class Game {
         return mutex.isReleased();
     }
 
-    public synchronized boolean setMutex(Player p) throws PlayerSequenceWrongException, MutexNotReleasedException {
+    public synchronized boolean setMutex(Player p) throws PlayersWrongTurnException, MutexNotReleasedException {
         checkNotNull(p);
         if(!mutex.isReleased()){
             if(mutex.getPlayerID().equals(p.getId())) return false; // bereits erworben
             else throw new MutexNotReleasedException(); //
         }
 
-        if(!getPlayerManager().getCurrentPlayer().equals(p)) throw new PlayerSequenceWrongException();
+        if(!getPlayerManager().getCurrentPlayer().equals(p)) throw new PlayersWrongTurnException();
         return mutex.acquire(p.getId());
     }
 

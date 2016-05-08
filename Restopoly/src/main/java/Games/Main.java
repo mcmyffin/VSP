@@ -375,7 +375,7 @@ public class Main extends MainAbstract{
             ex.printStackTrace();
         });
 
-        exception(PlayerSequenceWrongException.class, (ex, req, res) -> {
+        exception(PlayersWrongTurnException.class, (ex, req, res) -> {
             res.status(409); // Conflict
             res.body("Wrong player turn");
             ex.printStackTrace();

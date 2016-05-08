@@ -91,7 +91,7 @@ public class ComponentsDTO {
         return decks;
     }
 
-    public String getEvents() {
+    public String getEvent() {
         return events;
     }
 

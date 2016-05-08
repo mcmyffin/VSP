@@ -396,7 +396,7 @@ public class GameManager {
         return p.isReady();
     }
 
-    public void signalPlayerState(String gameID, String playerID) throws GameNotFoundException, PlayerNotFoundException, PlayerSequenceWrongException {
+    public void signalPlayerState(String gameID, String playerID) throws GameNotFoundException, PlayerNotFoundException, PlayersWrongTurnException {
 
         Game g = getGameObjectById(gameID);
         Player p = g.getPlayerManager().getPlayerById(playerID);
@@ -429,7 +429,7 @@ public class GameManager {
         return g.isMutexReleased();
     }
 
-    public boolean setPlayerTurn(String gameID, String playerID) throws GameNotFoundException, PlayerNotFoundException, PlayerSequenceWrongException, MutexNotReleasedException {
+    public boolean setPlayerTurn(String gameID, String playerID) throws GameNotFoundException, PlayerNotFoundException, PlayersWrongTurnException, MutexNotReleasedException {
 
         Game g = getGameObjectById(gameID);
         Player player = g.getPlayerManager().getPlayerById(playerID);
