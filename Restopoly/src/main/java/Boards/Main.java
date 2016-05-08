@@ -42,8 +42,8 @@ public class Main extends MainAbstract{
         BoardManager boardManager = new BoardManager();
         RegistrationService registrationService = new RegistrationService(main);
 
-//        registrationService.startRegistration();
-//        YellowPageService.startListening();
+        registrationService.startRegistration();
+        YellowPageService.startListening();
 
         /**
          * returns all active games (both running and joinable)
