@@ -4,8 +4,12 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
 
+import Common.Exceptions.*;
 import Events.EventManagerComponent.DTO.EventDTO;
+import Events.EventManagerComponent.DTO.SubscriberDTO;
 import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
+import org.eclipse.jetty.util.HostMap;
 import spark.QueryParamsMap;
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -14,38 +18,70 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public class EventManager {
 
+    private final Gson gson;
     private final Map<String,Event> eventMap;
+    private final Map<String,Subscriber> subscriberMap; // <subscriberID,Subscriber>
+    private final Map<String,Set<String>> subscriberMapList; // <game,List<subscriberID>>
     private final String regexGetterName = "getEventListBy";
+    private long subscriptionsCounter = 0;
+
 
     public EventManager() {
+
         this.eventMap = new HashMap();
+        this.subscriberMap = new HashMap();
+        this.subscriberMapList = new HostMap();
+        this.gson = new Gson();
+    }
+
+    private synchronized String getNextSubscriptionsID(){
+        String id = "/events/subscriptions/"+subscriptionsCounter;
+        subscriptionsCounter++;
+        return id;
     }
 
 
+    private synchronized void notifySubscribers(Event event){
+        checkNotNull(event);
 
-    public String addEvent(String jsonBody) {
+        String gameURI  = event.getGame();
+        if(!subscriberMapList.containsKey(gameURI)) return;
+
+        Set<String> subscribersList = subscriberMapList.get(gameURI);
+        for(String subscriberID : subscribersList){
+            Subscriber s = subscriberMap.get(subscriberID);
+            s.sendToSubscriber(event);
+        }
+    }
+
+    public String addEvent(String jsonBody) throws RequiredJsonParamsNotFoundException {
         checkNotNull(jsonBody);
 
         Gson gson = new Gson();
         EventDTO dto = gson.fromJson(jsonBody,EventDTO.class);
 
         String mapID = Integer.toString(eventMap.size());
-        String eventID = "event/"+mapID;
-        Event e = new Event(
-                                eventID,
-                                dto.getGame(),
-                                dto.getType(),
-                                dto.getName(),
-                                dto.getReason(),
-                                dto.getResource(),
-                                dto.getPlayer(),
-                                dto.getTime()
-                            );
+        String eventID = "/events/"+mapID;
+        dto.setId(eventID);
+        Event e = Event.fromDTO(dto);
 
-        eventMap.put(mapID,e);
+
+        eventMap.put(eventID,e);
+        notifySubscribers(e);
         return eventID;
     }
 
+    private Subscriber getSubScriberObjectById(String subscriberID) throws SubscriberNotFoundException {
+        checkNotNull(subscriberID);
+        if(!subscriberMap.containsKey(subscriberID)) throw new SubscriberNotFoundException();
+        return subscriberMap.get(subscriberID);
+    }
+
+    private Event getEventObjectById(String eventID) throws EventNotFoundException {
+        checkNotNull(eventID);
+        if(!eventMap.containsKey(eventID)) throw new EventNotFoundException();
+        return eventMap.get(eventID);
+    }
 
     private List<Event>  getEventListBygame(String gameRegex){
         checkNotNull(gameRegex);
@@ -66,7 +102,7 @@ public class EventManager {
         List<Event> eventList = new ArrayList();
         for(Event e : eventMap.values()){
 
-            boolean contains = e.getTime().contains(typeRegex);
+            boolean contains = e.getType().contains(typeRegex);
             if(contains) eventList.add(e);
 
         }
@@ -165,46 +201,94 @@ public class EventManager {
         return searchResultJson;
     }
 
-    public String searchByQuery(QueryParamsMap queryParamsMap){
+    public String searchByQuery(QueryParamsMap queryParamsMap) throws QuerryParamsNotFoundException {
         checkNotNull(queryParamsMap);
+
+        if(queryParamsMap.toMap().isEmpty()) throw new QuerryParamsNotFoundException();
 
         Collection<Event> searchResult = searchByquery(queryParamsMap.toMap());
         return eventCollectionToJson(searchResult);
     }
 
-    public String deleteByQuerry(QueryParamsMap queryParamsMap) {
+    public String deleteByQuerry(QueryParamsMap queryParamsMap) throws QuerryParamsNotFoundException {
         checkNotNull(queryParamsMap);
 
+        if(queryParamsMap.toMap().isEmpty()) throw new QuerryParamsNotFoundException();
         Collection<Event> eventCollection = searchByquery(queryParamsMap.toMap());
         for(Event e : eventCollection) eventMap.remove(e.getId().substring(e.getId().indexOf("/")+1));
 
         return eventCollectionToJson(eventCollection);
     }
 
-    public List<Event> getEventListByid(String eventID) {
-        checkNotNull(eventID);
+    public List<Event> getEventListByid(String idregex){
+        checkNotNull(idregex);
 
         List<Event> eventList = new ArrayList();
-        Event e = eventMap.get(eventID);
+        for(Event e : eventMap.values()){
 
-        if(e == null) return eventList;
-        eventList.add(e);
+            boolean contains = e.getId().contains(idregex);
+            if(contains) eventList.add(e);
+
+        }
         return eventList;
+
     }
 
-    public String getEventByID(String eventID){
-        Event e = eventMap.get(eventID);
-        if(e == null) return "";
+    public String getEventByid(String eventID) throws EventNotFoundException {
+        checkNotNull(eventID);
 
+        Event event = getEventObjectById(eventID);
+        return gson.toJson(event.toDTO());
+    }
 
-        String jsonObj = "";
+    public String getSubscribtions() {
+        Set<String> subscribtions = subscriberMap.keySet();
+        return  gson.toJson(subscribtions);
+    }
 
-        Gson g = new Gson();
+    public synchronized String getSubscriberById(String subscriberID) throws SubscriberNotFoundException {
+        checkNotNull(subscriberID);
 
+        Subscriber subscriber = getSubScriberObjectById(subscriberID);
+        return gson.toJson(subscriber.toDTO());
+    }
 
-        EventDTO eventDTO = g.fromJson(jsonObj,EventDTO.class);
+    public synchronized String createSubscriber(String jsonBody) throws WrongFormatException {
+        checkNotNull(jsonBody);
 
+        try{
+            SubscriberDTO subscriberDTO = gson.fromJson(jsonBody, SubscriberDTO.class);
+            subscriberDTO.setId(getNextSubscriptionsID());
 
-        return g.toJson(e.toDTO());
+            Subscriber subscriber = Subscriber.fromDTO(subscriberDTO);
+            subscriberMap.put(subscriber.getId(),subscriber);
+
+            if(subscriberMapList.containsKey(subscriber.getGame())){
+                Set<String> subscribersList = subscriberMapList.get(subscriber.getGame());
+                subscribersList.add(subscriber.getId());
+            }else{
+                Set<String> subscribersList = new HashSet();
+                subscribersList.add(subscriber.getId());
+                subscriberMapList.put(subscriber.getGame(),subscribersList);
+            }
+
+            return subscriber.getId();
+
+        }catch (JsonSyntaxException ex){
+            throw new WrongFormatException();
+        }
+    }
+
+    public String removeSubscriberById(String subscriberID) throws SubscriberNotFoundException {
+        checkNotNull(subscriberID);
+
+        Subscriber subscriber = getSubScriberObjectById(subscriberID);
+        subscriberMap.remove(subscriberID);
+
+        if(subscriberMapList.containsKey(subscriber.getGame())){
+            Set<String> subscriberList = subscriberMapList.get(subscriber.getGame());
+            subscriberList.remove(subscriberID);
+        }
+        return gson.toJson(subscriber.toDTO());
     }
 }

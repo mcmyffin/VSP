@@ -1,5 +1,6 @@
 package Events.EventManagerComponent;
 
+import Common.Exceptions.RequiredJsonParamsNotFoundException;
 import Events.EventManagerComponent.DTO.EventDTO;
 
 /**
@@ -105,7 +106,8 @@ public class Event {
         return dto;
     }
 
-    public static Event fromDTO(EventDTO dto){
+    public static Event fromDTO(EventDTO dto) throws RequiredJsonParamsNotFoundException {
+        dto.checkContructorArguments();
         Event e = new Event(
                 dto.getId(),
                 dto.getGame(),

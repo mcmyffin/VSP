@@ -106,6 +106,7 @@ public class BoardManager {
         String player = pawn.getPlayer();
 
         EventDTO eventPostDTO = new EventDTO(
+
                                     game,
                                     type,
                                     name,

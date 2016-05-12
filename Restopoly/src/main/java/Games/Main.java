@@ -228,7 +228,7 @@ public class Main extends MainAbstract{
          * tries to aquire the turn mutex (player is given either as query or body parameter)
          */
         put("/games/:gameID/players/turn", (req,res) -> {
-            if(req.queryMap().toMap().isEmpty() || !req.queryMap().toMap().containsKey("player")) throw new QuerryParamsNotFound();
+            if(req.queryMap().toMap().isEmpty() || !req.queryMap().toMap().containsKey("player")) throw new QuerryParamsNotFoundException();
 
             String gameID = req.params(":gameID");
             gameID = "games/"+gameID;
@@ -357,7 +357,7 @@ public class Main extends MainAbstract{
             ex.printStackTrace();
         });
 
-        exception(QuerryParamsNotFound.class, (ex, req, res) -> {
+        exception(QuerryParamsNotFoundException.class, (ex, req, res) -> {
             res.status(400);// bad request
             res.body("QuerryParameter required");
             ex.printStackTrace();
