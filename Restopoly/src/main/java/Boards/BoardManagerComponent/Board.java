@@ -2,6 +2,7 @@ package Boards.BoardManagerComponent;
 
 import Boards.BoardManagerComponent.DTOs.*;
 import Common.Exceptions.*;
+import Common.Util.IPFinder;
 import Games.GameManagerComponent.DTO.ComponentsDTO;
 import Games.GameManagerComponent.DTO.ServicesDTO;
 import com.google.gson.Gson;
@@ -10,6 +11,7 @@ import com.mashape.unirest.http.JsonNode;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
 import org.json.JSONArray;
+import org.json.JSONObject;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -29,6 +31,7 @@ public class Board {
     private List<Field> fieldList;
     private Map<String,Pawn> pawnsMap;        // Map<PawnID,Pawn>
     private Map<String,Place> placeMap;       // Map<PlaceID,Place>
+    private Field los;
 
     private final Gson gson;
     private RollPersistence rollPersistence;
@@ -46,8 +49,6 @@ public class Board {
         id = "/boards"+gameID;
 
         this.rollPersistence = new RollPersistence();
-
-        initBoard();
     }
 
     private String getHostFromURI(String uri) throws URISyntaxException {
@@ -84,7 +85,8 @@ public class Board {
         return id;
     }
 
-    private void createPlace(int number_of_places, String name, String broker){
+    private String[] createPlace(int number_of_places, String name, String broker){
+        String[] ids = new String[number_of_places];
         for(int i = 0; i < number_of_places ; i++){
             String placeID = getNextPlaceID();
             Place place = new Place(placeID,name,broker);
@@ -92,7 +94,28 @@ public class Board {
 
             Field f = new Field(place);
             fieldList.add(f);
+
+            ids[i] = placeID;
         }
+        return ids;
+    }
+
+    private void registerPlace(String brokerURI, String placeURI) throws UnirestException {
+        checkNotNull(brokerURI);
+
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put("place",placeURI);
+
+        Unirest.put(brokerURI).header("Content-Type","application/json").body(jsonObject.toString()).asString();
+    }
+
+    private synchronized Field createLosField(){
+        String placeID = getNextPlaceID();
+        Place place = new Place(placeID,"LOS","");
+
+        placeMap.put(placeID,place);
+
+        return new Field(place);
     }
 
     private ServicesDTO getGamesServices() throws UnirestException {
@@ -113,31 +136,54 @@ public class Board {
         } else throw new UnirestException("Response Status not 200");
     }
 
-    private List<String> getEstatesURIList() throws UnirestException {
+    private List<String> getEstatesIDList() throws UnirestException {
 
         List<String> brokerPlacesURIList = new ArrayList<>();
-        ServicesDTO servicesDTO = getGamesServices();
-
         String brokerURI = getGamesServices().getBroker();
+
         if (brokerURI == null || brokerURI.isEmpty()) throw new UnirestException("Broker URI not valid: "+brokerURI);
 
         HttpResponse<JsonNode> brokerResponse = Unirest.get(brokerURI + "/places").asJson();
         if (brokerResponse.getStatus() == 200) {
 
-            JSONArray jsonArray = brokerResponse.getBody().getArray();
+            JSONArray jsonArray = brokerResponse.getBody().getObject().getJSONArray("estates");
             for (Object o : jsonArray) brokerPlacesURIList.add(o.toString());
 
         }
         return brokerPlacesURIList;
     }
 
-    private void initBoard() {
+    private synchronized void createAndRegisterPlacesFromBroker() throws UnirestException {
 
-        // TODO weil keine Ahnung
+        List<String> estatesIdList = getEstatesIDList();
+
+        List<String> brokerPlacesURIList = new ArrayList<>();
+        String brokerURI = getGamesServices().getBroker();
+
+        for(String estateID : estatesIdList){
+
+            String estateURI = brokerURI+estateID;
+            HttpResponse<JsonNode> response = Unirest.get(estateURI).asJson();
+
+            JSONObject jsonObject = response.getBody().getObject();
+
+            String name     = jsonObject.getString("name");
+            String broker   = estateURI;
+
+            String[] placeIDs = createPlace(1,name,broker);
+            String placeURI = IPFinder.getIP()+placeIDs[0];
+
+            registerPlace(estateURI,placeURI); // registriere den Place beim Broker (per PUT)
+
+        }
+    }
+
+    void initializePlaces() throws UnirestException {
+
         // create non estates
 
         // LOS
-        createPlace(1, "LOS", "");
+        los = createLosField();
         // Gemeinschaftsfeld x 3
         createPlace(3, "Gemeinschaftsfeld", "");
         // Einkommensteuer x 1
@@ -153,12 +199,14 @@ public class Board {
         // Zusatzsteuer
         createPlace(1, "Zusatzsteuer", "");
 
-        // create estates (Grundstücke selbst erstellen)
-        // register estates (beim Broker diese Place registrieren ???)
+        createAndRegisterPlacesFromBroker();
 
+        // shuffel places
+        Collections.shuffle(fieldList);
 
+        // add "LOS" field at first position
+        fieldList.add(0,los);
 
-        // then other Fields
     }
 
     public String getGameURI(){ return gameService+gameID;}

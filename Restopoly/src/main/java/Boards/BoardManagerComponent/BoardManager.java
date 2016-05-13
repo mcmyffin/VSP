@@ -140,25 +140,28 @@ public class BoardManager {
 
     /***************************/
 
-    public synchronized String createBoard(String jsonString) throws BoardAlreadyExistsException, WrongFormatException, URISyntaxException {
+    public synchronized String createBoard(String jsonString) throws BoardAlreadyExistsException,
+            WrongFormatException, URISyntaxException, ServiceNotAvaibleException {
         checkNotNull(jsonString);
 
-        JSONObject jsonObject = new JSONObject(jsonString);
+        try {
 
-        if(!jsonObject.has("game"))  throw new WrongFormatException("can't find \"game\" param");
-        String gameURI = jsonObject.getString("game");
+            JSONObject jsonObject = new JSONObject(jsonString);
+            if(!jsonObject.has("game"))  throw new WrongFormatException("can't find \"game\" param");
 
-        Board board = new Board(gameURI);
+            String gameURI = jsonObject.getString("game");
+            Board board = new Board(gameURI);
 
-        if(boardGameIDMap.containsKey(board.getId())) throw new BoardAlreadyExistsException();
+            if(boardGameIDMap.containsKey(board.getId())) throw new BoardAlreadyExistsException();
 
-        boardGameIDMap.put(board.getId(),board);
+            boardGameIDMap.put(board.getId(),board);
+            board.initializePlaces();
 
-        // hole dir service broker
+            return board.getId();
 
-        // hole dir alle Places vom Broker
-        // speichere diese in das Board
-        return board.getId();
+        } catch (UnirestException e) {
+            throw new ServiceNotAvaibleException(e.getMessage());
+        }
     }
 
 

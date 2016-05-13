@@ -67,7 +67,8 @@ public class Main extends MainAbstract{
             String jsonString = req.body();
             String gameID = boardManager.createBoard(jsonString);
             setLocationHeader(res,URL+gameID);
-            return "OK";
+
+            return boardManager.getBoard(gameID);
         });
 
         /**
