@@ -2,6 +2,7 @@ package Brokers.BrokerManagerComponent;
 
 import Brokers.BrokerManagerComponent.DTO.BrokerDTO;
 import Common.Exceptions.BrokerAlreadyExistsException;
+import Common.Exceptions.BrokerNotFoundException;
 import Common.Exceptions.WrongFormatException;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
@@ -18,7 +19,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class BrokerManager {
 
     private Gson gson;
-    private long brokerIDCounter = 0;
 
     private final Map<String, Broker> brokerMap;
 
@@ -40,21 +40,29 @@ public class BrokerManager {
             if(brokerMap.containsKey(broker.getId())) {
                 throw new BrokerAlreadyExistsException();
             }
-        //TODO
+
+        brokerMap.put(broker.getId(),broker);
+        return broker.getId();
 
         }catch(JsonSyntaxException ex){
             throw new WrongFormatException();
 
         }
-        //TODO
-        return "TODO";
-
     }
 
-    public String getbrokerById(String gameID) {
+    private Broker getBrokerObjectByID(String gameID) throws BrokerNotFoundException {
         checkNotNull(gameID);
-        //TODO
-        return "TODO";
+        if(!brokerMap.containsKey(gameID)) throw new BrokerNotFoundException();
+        return brokerMap.get(gameID);
+    }
+
+    public String getbrokerById(String gameID) throws BrokerNotFoundException {
+        checkNotNull(gameID);
+
+        Broker broker = getBrokerObjectByID(gameID);
+        BrokerDTO brokerDTO = broker.toDTO();
+
+        return gson.toJson(brokerDTO);
     }
 
     public String getBrokerPlacesByGameId(String gameID) {

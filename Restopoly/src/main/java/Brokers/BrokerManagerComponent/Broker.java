@@ -1,9 +1,17 @@
 package Brokers.BrokerManagerComponent;
 
 import Brokers.BrokerManagerComponent.DTO.BrokerDTO;
+import Games.GameManagerComponent.Components;
+import Games.GameManagerComponent.DTO.ComponentsDTO;
+import com.google.gson.Gson;
+import com.mashape.unirest.http.HttpResponse;
+import com.mashape.unirest.http.Unirest;
+import com.mashape.unirest.http.exceptions.UnirestException;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.HashMap;
+import java.util.Map;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -16,13 +24,17 @@ public class Broker {
     private String gameID;
     private String gameService;
     private String estates;
+    private Map<String, BrokerPlace> placesMap;
 
     public Broker(String game, String estates) throws URISyntaxException {
 
-        this.estates = estates;
+        placesMap = new HashMap();
         gameID = getGameIDFromURI(game);
         gameService = getHostFromURI(game);
         id = "/broker" + gameID;
+
+        this.estates = id+"/places";
+
     }
 
     public static Broker fromDTO(BrokerDTO brokerDTO) throws URISyntaxException {
@@ -54,11 +66,36 @@ public class Broker {
 
     }
 
+//    private ComponentsDTO getGameComponent() throws UnirestException {
+//        HttpResponse<String> httpres = Unirest.get(gameService+"/components").asString();
+//
+//        if(httpres.getStatus() == 200){
+//            String body = httpres.getBody();
+//            Gson gson = new Gson();
+//            ComponentsDTO dto = gson.fromJson(body, ComponentsDTO.class);
+//            return dto;
+//        }
+//        throw new UnirestException("Wron Status from GameService in Broker");
+//    }
+
+    private void initializePlaces() throws UnirestException {
+       //TODO
+
+
+
+    }
+
+
     public String getId() {
         return id;
     }
 
     public String getGameService() {
         return gameService;
+    }
+
+    public BrokerDTO toDTO() {
+        BrokerDTO brokerDTO = new BrokerDTO(id,gameService,estates);
+        return brokerDTO;
     }
 }

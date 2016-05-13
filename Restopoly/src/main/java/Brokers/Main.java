@@ -58,7 +58,7 @@ public class Main extends MainAbstract{
         get("/broker/:gameID", (req,res) -> {
             res.status(200);
             String gameID = req.params(":gameID");
-            gameID = "broker/"+gameID;
+            gameID = "/broker/"+gameID;
 
             String broker   = brokerManager.getbrokerById(gameID); // muss GameNotFoundException werfen wenn nicht gefunden
             return broker;
