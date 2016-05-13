@@ -1,4 +1,4 @@
-package Brokers.BrokerManagerComponent.DTO;
+package Brokers.BrokerManagerComponent.DTOs;
 
 /**
  * Created by sasa on 11.05.16.

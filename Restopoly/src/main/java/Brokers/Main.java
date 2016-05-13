@@ -48,7 +48,7 @@ public class Main extends MainAbstract{
 
             String brokerJsonString = req.body();
             String brokerID = brokerManager.createBroker(brokerJsonString); // throws WrongFormatException
-            res.header("Location",URL+"/"+brokerID);
+            res.header("Location",URL+brokerID);
             return "OK";
         });
 
@@ -57,6 +57,7 @@ public class Main extends MainAbstract{
          */
         get("/broker/:gameID", (req,res) -> {
             res.status(200);
+            res.header("Content-Type","application/json");
             String gameID = req.params(":gameID");
             gameID = "/broker/"+gameID;
 
@@ -65,7 +66,7 @@ public class Main extends MainAbstract{
         });
 
 
-        post("/broker/:gameID", (req, res) -> {
+        put("/broker/:gameID", (req, res) -> {
             //TODO
             return "TODO";
         });
@@ -75,13 +76,109 @@ public class Main extends MainAbstract{
          */
         get("/broker/:gameID/places", (req,res) -> {
             res.status(200);
-
+            res.header("Content-Type","application/json");
             String gameID = req.params(":gameID");
-            gameID = "broker/"+gameID;
+            gameID = "/broker/"+gameID;
 
             String places = brokerManager.getBrokerPlacesByGameId(gameID);
             return places;
         });
+
+
+        get("/broker/:gameID/places/:placeID", (req,res) -> {
+            res.status(200);
+            res.header("Content-Type","application/json");
+
+            String gameID = req.params(":gameID");
+            gameID = "/broker/"+gameID;
+
+            String placeID = gameID+"/places/"+req.params(":placeID");
+
+            String placeJsonSring = brokerManager.getPlaceJsonStringByID(gameID, placeID);
+            return placeJsonSring;
+
+        });
+
+        put("/broker/:gameID/places/placeID", (req,res) -> {
+            res.status(200);
+            if(!req.headers("Content-Type").equals("application/json")) throw new WrongContentTypeException();
+
+            res.header("Content-Type","application/json");
+
+            String gameID = req.params(":gameID");
+            gameID = "/broker/"+gameID;
+            String placeID = gameID+"/places/"+req.params(":placeID");
+
+            brokerManager.updatePlaceByID(gameID, placeID, req.body());
+            res.header("Location",URL+placeID);
+            return brokerManager.getPlaceJsonStringByID(gameID, placeID);
+        });
+
+
+        get("/broker/:gameID/places/owner", (req,res) -> {
+            res.status(200);
+            res.header("Content-Type","application/json");
+
+            String gameID = req.params(":gameID");
+            gameID = "/broker/"+gameID;
+
+
+        });
+
+        put("/broker/:gameID/places/owner", (req,res) -> {
+            res.status(200);
+
+            String gameID = req.params(":gameID");
+            gameID = "/broker/"+gameID;
+
+
+
+        });
+
+        delete("/broker/:gameID/places/owner", (req,res) -> {
+            res.status(200);
+
+            String gameID = req.params(":gameID");
+            gameID = "/broker/"+gameID;
+
+
+
+        });
+
+        put("/broker/:gameID/places/hypothecarycredit", (req,res) -> {
+            res.status(200);
+
+            String gameID = req.params(":gameID");
+            gameID = "/broker/"+gameID;
+
+
+
+        });
+
+        delete("/broker/:gameID/places/hypothecarycredit", (req,res) -> {
+            res.status(200);
+
+            String gameID = req.params(":gameID");
+            gameID = "/broker/"+gameID;
+
+
+
+        });
+
+
+        post("/broker/:gameID/places/visit", (req,res) -> {
+            res.status(200);
+
+            String gameID = req.params(":gameID");
+            gameID = "/broker/"+gameID;
+
+
+
+        });
+
+
+
+
 
 
 

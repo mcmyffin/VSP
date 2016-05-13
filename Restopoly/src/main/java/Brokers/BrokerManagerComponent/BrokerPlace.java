@@ -1,5 +1,7 @@
 package Brokers.BrokerManagerComponent;
 
+import Brokers.BrokerManagerComponent.DTOs.BrokerPlaceDTO;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -42,6 +44,7 @@ public class BrokerPlace {
         this.visit = visit;
         this.hypoCredit = hypoCredit;
     }
+    
 
     public String getId() {return id;}
 
@@ -62,4 +65,23 @@ public class BrokerPlace {
     public String getVisit() {return visit;}
 
     public String getHypoCredit() {return hypoCredit;}
+
+    public BrokerPlaceDTO toDTO() {
+        return new BrokerPlaceDTO(
+                id,
+                name,
+                place,
+                owner,
+                value,
+                rentListe,
+                costList,
+                housestList,
+                visit,
+                hypoCredit
+                );
+    }
+
+    public void setPlace(String place) {
+        this.place = place;
+    }
 }
