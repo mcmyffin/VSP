@@ -8,11 +8,13 @@ public class SubscriberDTO {
     private String id;
     private String game;
     private String uri;
+    private EventDTO event;
 
-    public SubscriberDTO(String id, String game, String uri) {
+    public SubscriberDTO(String id, String game, String uri, EventDTO event) {
         this.id = id;
         this.game = game;
         this.uri = uri;
+        this.event = event;
     }
 
     public String getId() {
@@ -37,5 +39,13 @@ public class SubscriberDTO {
 
     public void setUri(String uri) {
         this.uri = uri;
+    }
+
+    public EventDTO getEvent() {
+        return event;
+    }
+
+    public void setEvent(EventDTO event) {
+        this.event = event;
     }
 }

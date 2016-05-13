@@ -1,5 +1,6 @@
 package Events.EventManagerComponent;
 
+import Common.Exceptions.RequiredJsonParamsNotFoundException;
 import Events.EventManagerComponent.DTO.EventDTO;
 import Events.EventManagerComponent.DTO.SubscriberDTO;
 import com.google.gson.Gson;
@@ -18,11 +19,14 @@ public class Subscriber {
     private final String id;
     private String game;
     private String uri;
+    private Event eventRegex;
 
-    public Subscriber(String id, String game, String uri) {
+
+    public Subscriber(String id, String game, String uri,Event eventRegex) {
         this.id = id;
         this.game = game;
         this.uri = uri;
+        this.eventRegex = eventRegex;
         this.gson = new Gson();
     }
 
@@ -38,6 +42,9 @@ public class Subscriber {
         return uri;
     }
 
+    public Event getEventRegex() {
+        return eventRegex;
+    }
 
     void sendToSubscriber(Event event){
         checkNotNull(event);
@@ -64,17 +71,19 @@ public class Subscriber {
         return new SubscriberDTO(
                 id,
                 game,
-                uri
+                uri,
+                eventRegex.toDTO()
         );
     }
 
-    public static Subscriber fromDTO(SubscriberDTO subscriberDTO){
+    public static Subscriber fromDTO(SubscriberDTO subscriberDTO) throws RequiredJsonParamsNotFoundException {
         checkNotNull(subscriberDTO);
 
         return new Subscriber(
                 subscriberDTO.getId(),
                 subscriberDTO.getGame(),
-                subscriberDTO.getUri()
+                subscriberDTO.getUri(),
+                Event.fromDTO(subscriberDTO.getEvent())
         );
     }
 }

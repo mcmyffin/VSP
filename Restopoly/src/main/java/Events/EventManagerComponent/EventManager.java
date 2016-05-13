@@ -47,12 +47,26 @@ public class EventManager {
         String gameURI  = event.getGame();
         if(!subscriberMapList.containsKey(gameURI)) return;
 
+
+
         Set<String> subscribersList = subscriberMapList.get(gameURI);
         for(String subscriberID : subscribersList){
+
             Subscriber s = subscriberMap.get(subscriberID);
-            s.sendToSubscriber(event);
+            if(isRegexMatch(event,s.getEventRegex())) s.sendToSubscriber(event);
+
         }
     }
+
+    private boolean isRegexMatch(Event event, Event regexEvent){
+
+        return  event.getPlayer().contains(regexEvent.getPlayer()) ||
+                event.getName().contains(regexEvent.getName()) ||
+                event.getType().contains(regexEvent.getType()) ||
+                event.getReason().contains(regexEvent.getReason()) ||
+                event.getResource().contains(regexEvent.getResource());
+    }
+
 
     public String addEvent(String jsonBody) throws RequiredJsonParamsNotFoundException {
         checkNotNull(jsonBody);
@@ -253,7 +267,7 @@ public class EventManager {
         return gson.toJson(subscriber.toDTO());
     }
 
-    public synchronized String createSubscriber(String jsonBody) throws WrongFormatException {
+    public synchronized String createSubscriber(String jsonBody) throws WrongFormatException, RequiredJsonParamsNotFoundException {
         checkNotNull(jsonBody);
 
         try{

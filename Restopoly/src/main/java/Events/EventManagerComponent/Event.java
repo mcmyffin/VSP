@@ -51,11 +51,12 @@ public class Event {
     }
 
     public String getResource() {
-        return resource;
+
+        return resource == null ? "" : resource;
     }
 
     public String getPlayer() {
-        return player;
+        return player == null ? "" : player;
     }
 
     public String getTime() {
