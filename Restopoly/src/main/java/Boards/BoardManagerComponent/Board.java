@@ -3,6 +3,7 @@ package Boards.BoardManagerComponent;
 import Boards.BoardManagerComponent.DTOs.*;
 import Common.Exceptions.*;
 import Common.Util.IPFinder;
+import Common.Util.URIParser;
 import Games.GameManagerComponent.DTO.ComponentsDTO;
 import Games.GameManagerComponent.DTO.ServicesDTO;
 import com.google.gson.Gson;
@@ -13,7 +14,6 @@ import com.mashape.unirest.http.exceptions.UnirestException;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
 
@@ -38,8 +38,8 @@ public class Board {
 
     public Board(String game) throws URISyntaxException {
         this.counter = 0;
-        this.gameID    = getGameIDFromURI(game);
-        this.gameService = getHostFromURI(game);
+        this.gameID      = URIParser.getIDFromURI(game);
+        this.gameService = URIParser.getHostFromURI(game);
 
         this.fieldList= new ArrayList();
         this.pawnsMap = new HashMap();
@@ -49,27 +49,6 @@ public class Board {
         id = "/boards"+gameID;
 
         this.rollPersistence = new RollPersistence();
-    }
-
-    private String getHostFromURI(String uri) throws URISyntaxException {
-        URI u = URI.create(uri);
-
-        if(u.getScheme() == null || u.getHost() == null) throw new URISyntaxException(uri,"URI is not absolute");
-        String scheme = u.getScheme();
-        String host = u.getHost();
-        int port = (u.getPort() == -1 ? 80 : u.getPort());
-
-        return scheme+"://"+host+":"+port;
-    }
-
-    private String getGameIDFromURI(String uri) throws URISyntaxException {
-        URI u = new URI(uri);
-        if(u.getScheme() == null || u.getHost() == null) throw new URISyntaxException(uri,"URI is not absolute");
-
-        String path = u.getPath();
-        int i = path.lastIndexOf("/");
-
-        return path.substring(i,path.length());
     }
 
     private synchronized String getNextPlaceID(){
