@@ -13,13 +13,13 @@ public class BrokerPlaceDTO {
     private int value;
     private List<Integer> rentListe;
     private List<Integer> costList;
-    private List<Integer> housestList;
+    private int anzahlHaeuser;
     private String visit;
     private String hypoCredit;
 
 
     public BrokerPlaceDTO(String id, String name, String place, String owner, int value, List<Integer> rentListe,
-                          List<Integer> costList, List<Integer> housestList, String visit, String hypoCredit) {
+                          List<Integer> costList, int anzahlHaeuser, String visit, String hypoCredit) {
         this.id = id;
         this.name = name;
         this.place = place;
@@ -27,7 +27,7 @@ public class BrokerPlaceDTO {
         this.value = value;
         this.rentListe = rentListe;
         this.costList = costList;
-        this.housestList = housestList;
+        this.anzahlHaeuser = anzahlHaeuser;
         this.visit = visit;
         this.hypoCredit = hypoCredit;
     }
@@ -84,12 +84,12 @@ public class BrokerPlaceDTO {
         this.costList = costList;
     }
 
-    public List<Integer> getHousestList() {
-        return housestList;
+    public int getHousest() {
+        return anzahlHaeuser;
     }
 
-    public void setHousestList(List<Integer> housestList) {
-        this.housestList = housestList;
+    public void setHouses(int anzahlHaeuser) {
+        this.anzahlHaeuser = anzahlHaeuser;
     }
 
     public String getVisit() {

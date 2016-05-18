@@ -17,21 +17,20 @@ public class BrokerPlace {
     private int value;
     private List<Integer> rentListe;
     private List<Integer> costList;
-    private List<Integer> housestList;
+    private int anzahlHaeuser;
     private String visit;
     private String hypoCredit;
 
     public BrokerPlace(String id, String name, String place, String owner, int value, int[] rentList,
-                       int[]  costList, int[]  housestList, String visit, String hypoCredit) {
+                       int[]  costList, int anzahlHaeuser, String visit, String hypoCredit) {
         this.id = id;
         List<Integer> costListArray = new ArrayList(Arrays.asList(costList));
-        List<Integer> housesListArray = new ArrayList(Arrays.asList(housestList));
         List<Integer> rentListArray = new ArrayList(Arrays.asList(rentList));
 
-        new BrokerPlace(id,name,place,owner,value,rentListArray,costListArray,housesListArray,visit,hypoCredit);
+        new BrokerPlace(id,name,place,owner,value,rentListArray,costListArray,anzahlHaeuser,visit,hypoCredit);
     }
     public BrokerPlace(String id, String name, String place, String owner, int value, List<Integer> rentListe,
-                       List<Integer> costList, List<Integer> housestList, String visit, String hypoCredit) {
+                       List<Integer> costList, int anzahlHaeuser, String visit, String hypoCredit) {
         this.id = id;
         this.name = name;
         this.place = place;
@@ -40,7 +39,7 @@ public class BrokerPlace {
         this.rentListe = rentListe;
 
         this.costList = costList;
-        this.housestList = housestList;
+        this.anzahlHaeuser = anzahlHaeuser;
         this.visit = visit;
         this.hypoCredit = hypoCredit;
     }
@@ -60,7 +59,7 @@ public class BrokerPlace {
 
     public List<Integer> getCostList() {return costList;}
 
-    public List<Integer> getHousestList() {return housestList;}
+    public int getHouses() {return anzahlHaeuser;}
 
     public String getVisit() {return visit;}
 
@@ -75,7 +74,7 @@ public class BrokerPlace {
                 value,
                 rentListe,
                 costList,
-                housestList,
+                anzahlHaeuser,
                 visit,
                 hypoCredit
                 );

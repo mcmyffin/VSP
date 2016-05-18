@@ -30,13 +30,12 @@ public class Broker {
         id = "/broker" + gameID;
 
         this.estates = id+"/places";
-
     }
 
     public static Broker fromDTO(BrokerDTO brokerDTO) throws URISyntaxException {
         checkNotNull(brokerDTO);
-
         Broker broker = new Broker(brokerDTO.getGame(), brokerDTO.getEstates());
+
         return broker;
     }
 
@@ -81,14 +80,13 @@ public class Broker {
         return placeID;
     }
 
-    private void createBrokerplace(String name, int[] cost) {
+    private void createBrokerplace(String name, int[] cost, int[] rent) {
 
         String placeID = getNextBrokerplaceID();
         String place = "";
         String owner = "";
         int value = 0;
-        int[] rent = {};
-        int[] houses = {};
+        int houses = 0;
         String visit = this.id+"/places/visit";
         String hypocredit = this.id+"places/hypothecarycredit";
 
@@ -100,49 +98,46 @@ public class Broker {
 
         //Deutsche Grund version Wiki/Monopoly (abgeschwaecht)
         //Strassen
-        createBrokerplace("Badstrasse", new int[]{60, 90, 120, 150, 180, 250}); //+30 / 70
-        createBrokerplace("Turmstrasse", new int[]{60, 90, 120, 150, 180, 250});
+        createBrokerplace("Badstrasse", new int[]{60, 90, 120, 150, 180, 250}, new int[]{30, 60, 90, 120, 190}); //+30 / 70
+        createBrokerplace("Turmstrasse", new int[]{60, 90, 120, 150, 180, 250}, new int[]{30, 60, 90, 120, 190});
 
-        createBrokerplace("Chausseestrasse", new int[]{100, 140, 180, 220, 260, 340}); //+40 / 80
-        createBrokerplace("Elisenstrasse", new int[]{100, 140, 180, 220, 260, 340});
-        createBrokerplace("Poststrasse", new int[]{120, 140, 180, 220, 260, 340});
+        createBrokerplace("Chausseestrasse", new int[]{100, 140, 180, 220, 260, 340}, new int[]{40, 80, 120, 160, 240}); //+40 / 80
+        createBrokerplace("Elisenstrasse", new int[]{100, 140, 180, 220, 260, 340}, new int[]{40, 80, 120, 160, 240});
+        createBrokerplace("Poststrasse", new int[]{120, 140, 180, 220, 260, 340}, new int[]{60, 100, 140, 180, 260});
 
-        createBrokerplace("Seestrasse", new int[]{140, 190, 240, 290, 340, 430 });//+50 / 90
-        createBrokerplace("Hafenstrasse", new int[]{140, 190, 240, 290, 340, 430});
-        createBrokerplace("Neue Strasse", new int[]{160, 190, 240, 290, 340, 430});
+        createBrokerplace("Seestrasse", new int[]{140, 190, 240, 290, 340, 430 }, new int[]{50, 100, 150, 200, 290});//+50 / 90
+        createBrokerplace("Hafenstrasse", new int[]{140, 190, 240, 290, 340, 430}, new int[]{50, 100, 150, 200, 290});
+        createBrokerplace("Neue Strasse", new int[]{160, 190, 240, 290, 340, 430}, new int[]{70, 120, 170, 220, 310});
 
-        createBrokerplace("Muenschener Strasse", new int[]{180, 260, 300, 360, 420, 520});//+60 / 100
-        createBrokerplace("Wiener Strasse", new int[]{180, 260, 300, 360, 420, 520});
-        createBrokerplace("Berliner Strasse", new int[]{200, 260, 300, 360, 420, 520});
+        createBrokerplace("Muenschener Strasse", new int[]{180, 260, 300, 360, 420, 520}, new int[]{60, 120, 180, 240, 340});//+60 / 100
+        createBrokerplace("Wiener Strasse", new int[]{180, 260, 300, 360, 420, 520}, new int[]{60, 120, 180, 240, 340});
+        createBrokerplace("Berliner Strasse", new int[]{200, 260, 300, 360, 420, 520}, new int[]{80, 140, 200, 260, 360});
 
-        createBrokerplace("Theaterstrasse", new int[]{220, 290, 360, 430, 500, 610});//+70 / 110
-        createBrokerplace("Museumsstrasse", new int[]{220, 290, 360, 430, 500, 610});
-        createBrokerplace("Opernplatz", new int[]{240, 290, 360, 430, 500, 610});
+        createBrokerplace("Theaterstrasse", new int[]{220, 290, 360, 430, 500, 610}, new int[]{70, 140, 210, 280, 390});//+70 / 110
+        createBrokerplace("Museumsstrasse", new int[]{220, 290, 360, 430, 500, 610}, new int[]{70, 140, 210, 280, 390});
+        createBrokerplace("Opernplatz", new int[]{240, 290, 360, 430, 500, 610}, new int[]{90, 160, 230, 300, 410});
 
-        createBrokerplace("Lessinstrasse", new int[]{260, 340, 420, 500, 580, 700}); //+80 / 120
-        createBrokerplace("Schillerstrasse", new int[]{260, 340, 420, 500, 580, 700});
-        createBrokerplace("Goethestrasse", new int[]{280, 340, 420, 500, 580, 700});
+        createBrokerplace("Lessinstrasse", new int[]{260, 340, 420, 500, 580, 700}, new int[]{80, 160, 240, 320, 440}); //+80 / 120
+        createBrokerplace("Schillerstrasse", new int[]{260, 340, 420, 500, 580, 700}, new int[]{80, 160, 240, 320, 440});
+        createBrokerplace("Goethestrasse", new int[]{280, 340, 420, 500, 580, 700}, new int[]{100, 180, 260, 340, 460});
 
-        createBrokerplace("Rathhausplatz", new int[]{300, 390, 480, 570, 660, 790});//+90 / 130
-        createBrokerplace("Hauptstrasse", new int[]{300, 390, 480, 570, 660, 790});
-        createBrokerplace("Bahnhofstrasse", new int[]{320, 390, 480, 570, 660, 790});
+        createBrokerplace("Rathhausplatz", new int[]{300, 390, 480, 570, 660, 790}, new int[]{90, 180, 270, 360, 430});//+90 / 130
+        createBrokerplace("Hauptstrasse", new int[]{300, 390, 480, 570, 660, 790}, new int[]{90, 180, 270, 360, 430});
+        createBrokerplace("Bahnhofstrasse", new int[]{320, 390, 480, 570, 660, 790}, new int[]{110, 200, 290, 380, 450});
 
-        createBrokerplace("Parkstrasse", new int[]{350, 450, 550, 650, 750, 890});//+100 / 140
-        createBrokerplace("Schlossallee", new int[]{400, 450, 550, 650, 750, 890});
+        createBrokerplace("Parkstrasse", new int[]{350, 450, 550, 650, 750, 890}, new int[]{100, 200, 300, 400, 540});//+100 / 140
+        createBrokerplace("Schlossallee", new int[]{400, 450, 550, 650, 750, 890}, new int[]{150, 250, 350, 450, 590});
 
         //bahnhoefe
-        createBrokerplace("Suedbahnhof", new int[]{200});
-        createBrokerplace("Westbahnhof", new int[]{200});
-        createBrokerplace("Nordbahnhof", new int[]{200});
-        createBrokerplace("Hauptbahnhof", new int[]{200});
+        createBrokerplace("Suedbahnhof", new int[]{200}, new int[]{100});
+        createBrokerplace("Westbahnhof", new int[]{200}, new int[]{100});
+        createBrokerplace("Nordbahnhof", new int[]{200}, new int[]{100});
+        createBrokerplace("Hauptbahnhof", new int[]{200}, new int[]{100});
 
         //werke
-        createBrokerplace("Elektrizitaetswerk", new int[]{150});
-        createBrokerplace("Wasserwerk", new int[]{150});
-
-
+        createBrokerplace("Elektrizitaetswerk", new int[]{150}, new int[]{100});
+        createBrokerplace("Wasserwerk", new int[]{150}, new int[]{100});
     }
-
 
     public String getId() {
         return id;
@@ -164,5 +159,9 @@ public class Broker {
     public BrokerPlace getBrokerPlaceByID(String placeID) throws PlaceNotFoundException {
         if(!placesMap.containsKey(placeID)) throw new PlaceNotFoundException();
         return placesMap.get(placeID);
+    }
+
+    public int getVisitCost(BrokerPlace brokerPlace) {
+        return brokerPlace.getRentListe().get(brokerPlace.getHouses());
     }
 }
