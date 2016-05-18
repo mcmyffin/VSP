@@ -2,7 +2,9 @@ package Boards.BoardManagerComponent;
 
 import Boards.BoardManagerComponent.DTOs.BoardDTO;
 import Boards.BoardManagerComponent.DTOs.PawnDTO;
+import Boards.BoardManagerComponent.Util.InitializeService;
 import Common.Exceptions.*;
+import Decks.DeckManagerComponent.DTOs.CardDTO;
 import Events.EventManagerComponent.DTO.EventDTO;
 import Games.GameManagerComponent.DTO.ComponentsDTO;
 import Games.GameManagerComponent.DTO.PlayerDTO;
@@ -12,6 +14,7 @@ import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.JsonNode;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.net.URISyntaxException;
@@ -25,10 +28,12 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class BoardManager {
 
     private final Gson gson;
+    private final InitializeService initializeService;
     private final Map<String,Board> boardGameIDMap; // Map<GameID,Board>
 
     public BoardManager() {
         this.gson = new Gson();
+        this.initializeService = new InitializeService();
         this.boardGameIDMap = new HashMap();
     }
 
@@ -54,14 +59,15 @@ public class BoardManager {
         String playerURI = pawn.getPlayer();
 
         try{
-            HttpResponse<String> response1 = Unirest.get(playerURI).asString();
-            HttpResponse<String> response2 = Unirest.get(board.getGameID()+"/players/turn").asString();
+            HttpResponse<String> gamesPlayerResponse = Unirest.get(playerURI).asString();
+            HttpResponse<String> gamesTurnResponse   = Unirest.get(board.getGameID()+"/players/turn").asString();
 
-            if(response1.getStatus() == 200 && response2.getStatus() == 200){
+            if(gamesPlayerResponse.getStatus() == 200 && gamesTurnResponse.getStatus() == 200){
 
-                PlayerDTO playerPawnDTO = gson.fromJson(response1.getBody(),PlayerDTO.class);
-                PlayerDTO playerTurnDTO = gson.fromJson(response2.getBody(),PlayerDTO.class);
+                PlayerDTO playerPawnDTO = gson.fromJson(gamesPlayerResponse.getBody(),PlayerDTO.class);
+                PlayerDTO playerTurnDTO = gson.fromJson(gamesTurnResponse.getBody(),PlayerDTO.class);
 
+                // Wenn der Player gleich dem im Turn, dann ist dieser am Zug
                 return  ( playerPawnDTO.getId().equals(playerTurnDTO.getId()) );
 
             } else throw new UnirestException("Response Status-Code != 200 !!!");
@@ -138,30 +144,53 @@ public class BoardManager {
         }
     }
 
+    private void notifyBankUeberLos(Pawn pawn){
+        throw new UnsupportedOperationException();
+    }
+
+    private CardDTO getCommunityCard(){
+        throw new UnsupportedOperationException();
+    }
+
+    private CardDTO getChanceCard(){
+        throw new UnsupportedOperationException();
+    }
+
+    private List<EventDTO> notifyBrokerByVisitPlace(Place place, Pawn pawn) throws UnirestException {
+
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put("player",pawn.getPlayer());
+
+        List<EventDTO> eventDTOList = new ArrayList();
+        HttpResponse<JsonNode> brokerResponse = Unirest.post(place.getBroker()+"/visit").header("Content-Type","application/json").body(jsonObject.toString()).asJson();
+        JSONArray jsonArray = brokerResponse.getBody().getArray();
+
+        for(Object o : jsonArray){
+            eventDTOList.add(gson.fromJson(o.toString(),EventDTO.class));
+        }
+
+        return eventDTOList;
+    }
+
     /***************************/
 
     public synchronized String createBoard(String jsonString) throws BoardAlreadyExistsException,
             WrongFormatException, URISyntaxException, ServiceNotAvaibleException {
         checkNotNull(jsonString);
 
-        try {
 
-            JSONObject jsonObject = new JSONObject(jsonString);
-            if(!jsonObject.has("game"))  throw new WrongFormatException("can't find \"game\" param");
+        JSONObject jsonObject = new JSONObject(jsonString);
+        if(!jsonObject.has("game"))  throw new WrongFormatException("can't find \"game\" param");
 
-            String gameURI = jsonObject.getString("game");
-            Board board = new Board(gameURI);
+        String gameURI = jsonObject.getString("game");
+        Board board = new Board(gameURI);
 
-            if(boardGameIDMap.containsKey(board.getId())) throw new BoardAlreadyExistsException();
+        if(boardGameIDMap.containsKey(board.getId())) throw new BoardAlreadyExistsException();
 
-            boardGameIDMap.put(board.getId(),board);
-            board.initializePlaces();
+        boardGameIDMap.put(board.getId(),board);
+        initializeService.addBoard(board);
 
-            return board.getId();
-
-        } catch (UnirestException e) {
-            throw new ServiceNotAvaibleException(e.getMessage());
-        }
+        return board.getId();
     }
 
 
@@ -273,7 +302,7 @@ public class BoardManager {
     }
 
     public synchronized String pawnRoll(String gameID, String pawnID) throws BoardNotFoundException, PawnNotFoundException,
-            PlayersWrongTurnException, ServiceNotAvaibleException, WrongFormatException {
+            PlayersWrongTurnException, ServiceNotAvaibleException, WrongFormatException, UnirestException {
         checkNotNull(gameID);
         checkNotNull(pawnID);
 
@@ -285,7 +314,6 @@ public class BoardManager {
         // !!! prüfe ob der Spieler am Zug ist !!!
         if(!isPlayersTurn(pawn,board)) throw new PlayersWrongTurnException();
 
-
         // 2.1 würfeln
         int number = getDiceNumber(board);
 
@@ -293,7 +321,7 @@ public class BoardManager {
         String type = "dice roll";
         String name = "Dice Event";
         String reason = "Player wants to roll Dice";
-        String resource = "";
+        String resource = "Number: "+number;
 
         EventDTO eventPlayerDiceDTO = createEvent(board,pawn,type,name,reason,resource);
         eventList.add(eventPlayerDiceDTO);
@@ -325,7 +353,7 @@ public class BoardManager {
     }
 
     public List<EventDTO> movePawn(String gameID, String pawnID, int number) throws BoardNotFoundException, PawnNotFoundException,
-                                                                            ServiceNotAvaibleException, WrongFormatException {
+            ServiceNotAvaibleException, WrongFormatException, UnirestException {
 
         Board board = getBoardObjectByGameId(gameID);
         Pawn pawn   = board.getPawnById(pawnID);
@@ -335,7 +363,7 @@ public class BoardManager {
         // 1 gewürfelte Zahl der RollPersistence übergeben
         board.getRollPersistence().addPawnRoll(pawnID,number);
         // 2. Pawn bewegen
-        board.pawnRoll(pawnID,number);
+        PawnMove move = board.pawnRoll(pawnID,number);
 
         // 4. erstelle Event (Spieler wurde bewegt)
         String type = "pawn move";
@@ -346,8 +374,31 @@ public class BoardManager {
 
         eventList.add(eventPlayerMoveDTO);
 
-        // TODO 5. eventuell dem Broker bescheid geben auf welchem Feld der Spieler steht
-        // TODO Folgeaktionen ermitteln
+
+        // Wenn kein Beoker für diesen Place eingetragen, dann nicht kaufbares Feld
+        if(move.isUeberLos()) notifyBankUeberLos(pawn);// TODO sage der Bank bescheid (Spieler erhällt Geld)
+        if(move.getPlace().getBroker().isEmpty()){
+            // Gemeinschaftskarte?
+            if(move.getPlace().getName().equals("Gemeinschaftsfeld")){
+                CardDTO card = getCommunityCard();
+                // TODO erstelle Event und weitere Aktionen
+
+            // Ereigniskarte?
+            }else if(move.getPlace().getName().equals("Ereignisfeld")){
+                CardDTO card = getChanceCard();
+                // TODO erstelle Event und weitere Aktionen
+
+            // Gefängnis
+            }else if(move.getPlace().getName().equals("Gehen ins Gefängnis")){
+                board.setPawnToJail(pawnID);
+                // TODO erstelle Event
+            }
+
+        }else{
+            // Benachrichte Broker (weil Feld besucht)
+            List<EventDTO> list = notifyBrokerByVisitPlace(move.getPlace(),pawn);
+            eventList.addAll(list);
+        }
 
         return eventList;
     }

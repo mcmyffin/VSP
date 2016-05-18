@@ -32,6 +32,7 @@ public class Board {
     private Map<String,Pawn> pawnsMap;        // Map<PawnID,Pawn>
     private Map<String,Place> placeMap;       // Map<PlaceID,Place>
     private Field los;
+    private Field jail;
 
     private final Gson gson;
     private RollPersistence rollPersistence;
@@ -97,9 +98,19 @@ public class Board {
         return new Field(place);
     }
 
+    private synchronized Field createJail(){
+        String placeID = getNextPlaceID();
+        Place place = new Place(placeID,"Im Gefägnis/nur zu besuch","");
+
+        placeMap.put(placeID,place);
+        Field field = new Field(place);
+        fieldList.add(field);
+        return field;
+    }
+
     private ServicesDTO getGamesServices() throws UnirestException {
 
-        HttpResponse<String> response = Unirest.get(gameID+"/services").asString();
+        HttpResponse<String> response = Unirest.get(getGameService()+"/services").asString();
         if(response.getStatus() == 200) {
             ServicesDTO servicesDTO = gson.fromJson(response.getBody(), ServicesDTO.class);
             return servicesDTO;
@@ -108,7 +119,7 @@ public class Board {
 
     private ComponentsDTO getGamesComponents() throws UnirestException {
 
-        HttpResponse<String> response = Unirest.get(gameID+"/components").asString();
+        HttpResponse<String> response = Unirest.get(getGameService()+"/components").asString();
         if(response.getStatus() == 200) {
             ComponentsDTO componentsDTO = gson.fromJson(response.getBody(), ComponentsDTO.class);
             return componentsDTO;
@@ -157,26 +168,33 @@ public class Board {
         }
     }
 
-    void initializePlaces() throws UnirestException {
+    public void initialize() throws UnirestException {
 
         // create non estates
 
         // LOS
         los = createLosField();
+
+        // Im Gefägnis/nur zu besuch
+        jail = createJail();
+
         // Gemeinschaftsfeld x 3
         createPlace(3, "Gemeinschaftsfeld", "");
-        // Einkommensteuer x 1
-        createPlace(1, "Einkommensteuer", "");
+
+//        // Einkommensteuer x 1
+//        createPlace(1, "Einkommensteuer", "");
+
         // Ereignisfeld x 3
         createPlace(3, "Ereignisfeld", "");
-        // Im Gefägnis/nur zu besuch
-        createPlace(1, "Im Gefägnis/nur zu besuch", "");
+
         // Frei Parken
         createPlace(1, "Frei Parken", "");
+
         // Gehen ins Gefängnis
         createPlace(1, "Gehen ins Gefängnis", "");
-        // Zusatzsteuer
-        createPlace(1, "Zusatzsteuer", "");
+
+//        // Zusatzsteuer
+//        createPlace(1, "Zusatzsteuer", "");
 
         createAndRegisterPlacesFromBroker();
 
@@ -186,6 +204,13 @@ public class Board {
         // add "LOS" field at first position
         fieldList.add(0,los);
 
+    }
+
+    synchronized void setPawnToJail(String pawnID) throws PawnNotFoundException {
+        checkNotNull(pawnID);
+
+        int jailPos = fieldList.indexOf(jail);
+        setPawnTo(pawnID,jailPos);
     }
 
     public String getGameURI(){ return gameService+gameID;}
@@ -288,25 +313,47 @@ public class Board {
         return rollPersistence;
     }
 
-    public synchronized void pawnRoll(String pawnID, int number) throws PawnNotFoundException {
+    public synchronized PawnMove pawnRoll(String pawnID, int number) throws PawnNotFoundException {
         checkNotNull(pawnID);
-        checkNotNull(number);
 
         // get Pawn
         Pawn pawn = getPawnById(pawnID);
 
         // get Field and remove pawn from Field
-        int position = pawn.getPosition();
-        Field field = fieldList.get(position);
+        int positionBefore = pawn.getPosition();
+        Field field = fieldList.get(positionBefore);
         field.removePawn(pawnID);
 
         // get new Position
         int size = fieldList.size();
-        position = (position + number) % size;
+        int positionAfter = (positionBefore + number) % size;
 
         // set new Position to Pawn and add Pawn to Field at Position
-        pawn.setPosition(position);
-        field = fieldList.get(position);
+        pawn.setPosition(positionAfter);
+        field = fieldList.get(positionAfter);
+        field.addPawn(pawn);
+
+        PawnMove pawnMove = new PawnMove(
+                pawn,
+                field.getPlace(),
+                positionBefore <= positionAfter
+        );
+
+        return pawnMove;
+    }
+
+    private synchronized void setPawnTo(String pawnID, int pos) throws PawnNotFoundException {
+        // get Pawn
+        Pawn pawn = getPawnById(pawnID);
+
+        // get Field and remove pawn from Field
+        int positionBefore = pawn.getPosition();
+        Field field = fieldList.get(positionBefore);
+        field.removePawn(pawnID);
+
+        // set new Position to Pawn and add Pawn to Field at Position
+        pawn.setPosition(pos);
+        field = fieldList.get(pos);
         field.addPawn(pawn);
     }
 
