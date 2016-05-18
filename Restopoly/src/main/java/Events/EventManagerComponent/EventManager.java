@@ -218,7 +218,7 @@ public class EventManager {
     public String searchByQuery(QueryParamsMap queryParamsMap) throws QuerryParamsNotFoundException {
         checkNotNull(queryParamsMap);
 
-        if(queryParamsMap.toMap().isEmpty()) throw new QuerryParamsNotFoundException();
+        if(queryParamsMap.toMap().isEmpty()) return gson.toJson(eventMap.keySet());
 
         Collection<Event> searchResult = searchByquery(queryParamsMap.toMap());
         return eventCollectionToJson(searchResult);
