@@ -41,7 +41,7 @@ public class Main extends MainAbstract{
         RegistrationService registrationService = new RegistrationService(main);
 
 
-//        registrationService.startRegistration();
+        registrationService.startRegistration();
 
         /**
          * List of available deck
