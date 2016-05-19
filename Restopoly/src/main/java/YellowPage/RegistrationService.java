@@ -8,6 +8,8 @@ import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
 
+import java.util.List;
+
 import static com.google.common.base.Preconditions.checkNotNull;
 import static spark.Spark.get;
 
@@ -63,11 +65,13 @@ public class RegistrationService {
     }
 
     public void startRegistration(){
+        removeOldRegistration();
         buildRegisteration(
                 main.getUrlService(),
                 main.getName(),
                 main.getDescription(),
-                main.getService());
+                main.getService()
+        );
     }
 
     public YellowPageDTO getResponseRegistration(){
@@ -80,10 +84,36 @@ public class RegistrationService {
 
         HttpResponse<String> response = Unirest.post(uri).header("Content-Type","application/json").body(jsonBody).asString();
 
-        if(response.getStatus() == 201){
+        if(response.getStatus() != 404 || response.getStatus() != 400){
 
-            return response.getHeaders().get("Location").get(0);
+            String locationHeader = response.getHeaders().getFirst("Location");
 
-        } else throw new UnirestException("Response Statuscode != 201");
+            System.out.println(">> send POST TO: "+uri);
+            System.out.println(">> body: "+jsonBody);
+            System.out.println(">> Location : "+locationHeader);
+
+            return locationHeader;
+
+        } else throw new UnirestException("Response Statuscode Problem : "+response.getStatus());
+    }
+
+    private static void sendDelete(String uri){
+        checkNotNull(uri);
+        try {
+            Unirest.delete(uri).asString();
+        } catch (UnirestException e) {}
+    }
+
+    private void removeOldRegistration() {
+        try{
+            List<YellowPageDTO> groupList = YellowPageService.getServicesByGroupName(main.getName());
+
+            for(YellowPageDTO dto : groupList){
+                if(dto.getService().equals(main.getService())) sendDelete(YellowPageService.yelloPageAdress+dto.get_uri());
+            }
+
+        }catch (UnirestException e){
+            System.out.println("Yellopage-Service is not reachable");
+        }
     }
 }

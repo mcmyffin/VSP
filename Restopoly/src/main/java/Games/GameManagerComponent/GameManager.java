@@ -12,6 +12,7 @@ import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
 import com.sun.istack.internal.NotNull;
+import org.json.JSONObject;
 
 import java.util.*;
 
@@ -85,7 +86,7 @@ public class GameManager {
     private Game createGame(@NotNull GameCreateDTO gameCreateDTO){
 
         // create ID's
-        String gamesId = "games/"+gamesMap.size();
+        String gamesId = "/games/"+gamesMap.size();
         String playersId = gamesId+"/players";
         String servicesId = gamesId+"/services";
         String componentsId = gamesId+"/components";
@@ -182,10 +183,10 @@ public class GameManager {
 
 
             services.setGame(Main.URLService);
-            components.setGame(Main.URL+"/"+game.getId());
+            components.setGame(Main.URL+game.getId());
 
             try{
-                //
+                // get Services
                 List<YellowPageDTO> groupServices = YellowPageService.getServicesByGroupName(Main.name);
                 for(YellowPageDTO dto : groupServices){
 
@@ -205,8 +206,11 @@ public class GameManager {
                     if(dto.getService().equals("dice")) services.setDice(dto.getUri());
                 }
 
-                String jsonRegistrationObject = "{\"game\":\""+Main.URL+"/"+game.getId()+"\"}";
+                JSONObject jsonObject = new JSONObject();
+                jsonObject.put("game",Main.URL+game.getId());
+                String jsonRegistrationObject = jsonObject.toString();
 
+                // create Components
                 // dice
                 if(services.getDice() != null && !services.getDice().isEmpty()){
                     String component = RegistrationService.sendPost(services.getDice(),jsonRegistrationObject);
@@ -234,13 +238,10 @@ public class GameManager {
                     components.setDeck(component);
                 }
                 // event
-                if(services.getEvent() != null && !services.getEvent().isEmpty()){
-                    String component = RegistrationService.sendPost(services.getEvent(),jsonRegistrationObject);
-                    components.setEvent(component);
-                }
+                components.setEvent(services.getEvent());
 
             }catch (UnirestException ex){
-
+                ex.printStackTrace();
             }
 
             return game.getId();

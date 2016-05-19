@@ -68,7 +68,7 @@ public class Main extends MainAbstract{
         get("/games/:gameID", (req,res) -> {
             res.status(200);
             String gameID = req.params(":gameID");
-            gameID = "games/"+gameID;
+            gameID = "/games/"+gameID;
 
             String game   = gameManager.getGameById(gameID); // muss GameNotFoundException werfen wenn nicht gefunden
             return game;
@@ -82,7 +82,7 @@ public class Main extends MainAbstract{
             res.status(200); // if found
 
             String gameID = req.params(":gameID");
-            gameID = "games/"+gameID;
+            gameID = "/games/"+gameID;
 
             String status = gameManager.getGameStatusByGameId(gameID); // muss GameNotFoundException werfen wenn nicht gefunden
             return status;
@@ -98,7 +98,7 @@ public class Main extends MainAbstract{
 
             res.status(200); // The change has been applied
             String gameID = req.params(":gameID");
-            gameID = "games/"+gameID;
+            gameID = "/games/"+gameID;
 
             gameManager.setGameStatusByGameId(gameID);
 
@@ -113,7 +113,7 @@ public class Main extends MainAbstract{
             res.header("Content-Type","application/json");
             res.status(200);
             String gameID = req.params(":gameID");
-            gameID = "games/"+gameID;
+            gameID = "/games/"+gameID;
 
             String services = gameManager.getServicesByGameId(gameID); // muss GameNotFoundException werfen wenn nicht gefunden
             return services;
@@ -127,7 +127,7 @@ public class Main extends MainAbstract{
 
             res.status(200);
             String gameID = req.params(":gameID");
-            gameID = "games/"+gameID;
+            gameID = "/games/"+gameID;
 
             gameManager.setServicesToGame(gameID, req.body()); // muss GameNotFoundException werfen wenn nicht gefunden
             return "OK";
@@ -141,7 +141,7 @@ public class Main extends MainAbstract{
             res.header("Content-Type","application/json");
 
             String gameID = req.params(":gameID");
-            gameID = "games/"+gameID;
+            gameID = "/games/"+gameID;
 
             String components = gameManager.getComponentsByGameId(gameID); // muss GameNotFoundException werfen wenn nicht gefunden
             return components;
@@ -155,7 +155,7 @@ public class Main extends MainAbstract{
 
             res.status(200);
             String gameID = req.params(":gameID");
-            gameID = "games/"+gameID;
+            gameID = "/games/"+gameID;
 
             gameManager.setComponentsToGame(gameID,req.body());  // muss GameNotFoundException werfen wenn nicht gefunden
 
@@ -170,7 +170,7 @@ public class Main extends MainAbstract{
             res.header("Content-Type","application/json");
 
             String gameID = req.params(":gameID");
-            gameID = "games/"+gameID;
+            gameID = "/games/"+gameID;
 
             String players = gameManager.getPlayersByGameId(gameID); // muss GameNotFoundException werfen wenn nicht gefunden
 
@@ -185,7 +185,7 @@ public class Main extends MainAbstract{
             res.status(200);
 
             String gameID = req.params(":gameID");
-            gameID = "games/"+gameID;
+            gameID = "/games/"+gameID;
 
             String playerID = gameManager.createPlayer(gameID,req.body()); // muss GameNotFoundException werfen wenn nicht gefunden
             res.header("Location",URL+"/"+playerID);
@@ -201,7 +201,7 @@ public class Main extends MainAbstract{
             res.header("Content-Type","application/json");
 
             String gameID = req.params(":gameID");
-            gameID = "games/"+gameID;
+            gameID = "/games/"+gameID;
 
             System.out.println("_____");
 
@@ -217,7 +217,7 @@ public class Main extends MainAbstract{
             res.header("Content-Type","application/json");
 
             String gameID = req.params(":gameID");
-            gameID = "games/"+gameID;
+            gameID = "/games/"+gameID;
 
             String player = gameManager.getPlayersTurn(gameID); // muss GameNotFoundException werfen wenn nicht gefunden
             // TODO -> was passiert wenn keiner den MUTEX hällt ? (momentan wird 404 Exception PlayerNotFoundException geworfen!)
@@ -231,7 +231,7 @@ public class Main extends MainAbstract{
             if(req.queryMap().toMap().isEmpty() || !req.queryMap().toMap().containsKey("player")) throw new QuerryParamsNotFoundException();
 
             String gameID = req.params(":gameID");
-            gameID = "games/"+gameID;
+            gameID = "/games/"+gameID;
 
             String playerID = req.queryParams("player");
 
@@ -252,7 +252,7 @@ public class Main extends MainAbstract{
         delete("/games/:gameID/players/turn",(req,res) -> {
 
             String gameID = req.params(":gameID");
-            gameID = "games/"+gameID;
+            gameID = "/games/"+gameID;
 
             gameManager.removePlayerTurn(gameID);
 
@@ -267,7 +267,7 @@ public class Main extends MainAbstract{
             res.header("Content-Type","application/json");
 
             String gameID = req.params(":gameID");
-            gameID = "games/"+gameID;
+            gameID = "/games/"+gameID;
 
             String playerID = req.params(":playerID");
             playerID = gameID+"/players/"+playerID;
@@ -285,7 +285,7 @@ public class Main extends MainAbstract{
 
             res.status(200);
             String gameID = req.params(":gameID");
-            gameID = "games/"+gameID;
+            gameID = "/games/"+gameID;
 
             String playerID = req.params(":playerID");
             playerID = gameID+"/players/"+playerID;
@@ -302,7 +302,7 @@ public class Main extends MainAbstract{
 
             res.status(200);
             String gameID = req.params(":gameID");
-            gameID = "games/"+gameID;
+            gameID = "/games/"+gameID;
 
             String playerID = req.params(":playerID");
             playerID = gameID+"/players/"+playerID;
@@ -318,7 +318,7 @@ public class Main extends MainAbstract{
         get("/games/:gameID/players/:playerID/ready" , (req,res) -> {
             res.status(200);
             String gameID = req.params(":gameID");
-            gameID = "games/"+gameID;
+            gameID = "/games/"+gameID;
 
             String playerID = req.params(":playerID");
             playerID = gameID+"/players/"+playerID;
@@ -333,7 +333,7 @@ public class Main extends MainAbstract{
         put("/games/:gameID/players/:playerID/ready" , (req,res) -> {
             res.status(200);
             String gameID = req.params(":gameID");
-            gameID = "games/"+gameID;
+            gameID = "/games/"+gameID;
 
             String playerID = req.params(":playerID");
             playerID = gameID+"/players/"+playerID;

@@ -6,6 +6,7 @@ import Common.Abstract.MainAbstract;
 import Common.Exceptions.*;
 import Common.Util.IPFinder;
 import Events.EventManagerComponent.EventManager;
+import YellowPage.RegistrationService;
 import YellowPage.YellowPageService;
 import spark.Request;
 import spark.Response;
@@ -35,8 +36,8 @@ public class Main extends MainAbstract {
 
         Main main = new Main();
         EventManager eventManager = new EventManager();
-//        RegistrationService registrationService = new RegistrationService(main);
-//        registrationService.startRegistration();
+        RegistrationService registrationService = new RegistrationService(main);
+        registrationService.startRegistration();
 
 
         YellowPageService.startListening();

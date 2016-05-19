@@ -49,4 +49,17 @@ public class Field {
                 pawns.keySet()
         );
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Field field = (Field) o;
+        return Objects.equals(getPlace(), field.getPlace());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getPlace());
+    }
 }
