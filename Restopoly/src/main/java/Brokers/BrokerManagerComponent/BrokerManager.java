@@ -36,8 +36,9 @@ public class BrokerManager {
     }
 
     public String getBrokers() {
+        //TODO
 
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     public synchronized String createBroker(String brokerJsonString) throws WrongFormatException, URISyntaxException, BrokerAlreadyExistsException {
@@ -168,7 +169,7 @@ public class BrokerManager {
         checkNotNull(gameID);
         checkNotNull(placeID);
         checkNotNull(playerJsonString);
-        
+
         Broker broker = getBrokerObjectByID(gameID);
         BrokerPlace brokerPlace =  broker.getBrokerPlaceByID(placeID);
         JSONObject jsonObj = new JSONObject(playerJsonString);

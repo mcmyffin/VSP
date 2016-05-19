@@ -33,12 +33,6 @@ public class Main extends MainAbstract{
         Main main = new Main();
         BrokerManager brokerManager = new BrokerManager();
 
-        get("/broker", (req, res) -> {
-            res.status(200);
-            res.header("Content-Type","application/json");
-            String brokersJsonArray = brokerManager.getBrokers();
-            return brokersJsonArray;
-        });
 
         post("/broker", (req, res) -> {
             if(!req.headers("Content-Type").equals("application/json")) throw new WrongContentTypeException();
@@ -48,6 +42,13 @@ public class Main extends MainAbstract{
             String brokerID = brokerManager.createBroker(brokerJsonString); // throws WrongFormatException
             res.header("Location",URL+brokerID);
             return "OK";
+        });
+
+        get("/broker", (req,res) -> {
+            res.status(200);
+            res.header("Content-Type","application/json");
+            String brokersJsonArray = brokerManager.getBrokers();
+            return brokersJsonArray;
         });
 
         /**
