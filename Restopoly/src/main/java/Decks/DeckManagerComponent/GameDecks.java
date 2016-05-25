@@ -14,16 +14,14 @@ import java.util.List;
 public class GameDecks {
 
     private final String id;
-    private final String gameService;
+    private String gameID;
     private Deck communityDeck;
     private Deck chanceDeck;
 
     public GameDecks(String game) throws URISyntaxException {
 
-        this.id             = "/decks"+ URIParser.getIDFromURI(game);
-        this.gameService    = URIParser.getHostFromURI(game);
-
-
+        this.gameID         = game;
+        this.id             = "/decks/"+ gameID;
     }
 
     void initializeDecks(){
@@ -73,8 +71,8 @@ public class GameDecks {
         return id;
     }
 
-    public String getGameService() {
-        return gameService;
+    public String getGameURI() {
+        return gameID;
     }
 
     public Card getCommunityCard() throws DeckException {

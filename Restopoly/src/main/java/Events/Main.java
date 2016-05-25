@@ -4,6 +4,7 @@ package Events; /**
 //import Common.Abstract.MainAbstract;
 import Common.Abstract.MainAbstract;
 import Common.Exceptions.*;
+import Common.Util.DebugService;
 import Common.Util.IPFinder;
 import Events.EventManagerComponent.EventManager;
 import YellowPage.RegistrationService;
@@ -40,8 +41,17 @@ public class Main extends MainAbstract {
         registrationService.startRegistration();
 
 
-        YellowPageService.startListening();
+        DebugService.setOutStream();
+        DebugService.setErrStream();
 
+
+        get("/err",(request, response) -> {
+            return DebugService.getErrList();
+        });
+
+        get("/out",(request, response) -> {
+            return DebugService.getOutList();
+        });
 
         get("/events/subscriptions", (req,res) -> {
             res.status(200);

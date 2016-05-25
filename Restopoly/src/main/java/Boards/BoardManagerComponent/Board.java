@@ -15,6 +15,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.net.URISyntaxException;
+import java.net.URLDecoder;
 import java.util.*;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -26,7 +27,6 @@ public class Board {
 
     private final String id;
     private String gameID;
-    private String gameService;
     private long counter;
     private List<Field> fieldList;
     private Map<String,Pawn> pawnsMap;        // Map<PawnID,Pawn>
@@ -39,15 +39,14 @@ public class Board {
 
     public Board(String game) throws URISyntaxException {
         this.counter = 0;
-        this.gameID      = URIParser.getIDFromURI(game);
-        this.gameService = URIParser.getHostFromURI(game);
+        this.gameID      = game;
 
         this.fieldList= new ArrayList();
         this.pawnsMap = new HashMap();
         this.placeMap = new HashMap();
         this.gson     = new Gson();
 
-        id = "/boards"+gameID;
+        id = "/boards/"+gameID;
 
         this.rollPersistence = new RollPersistence();
     }
@@ -110,7 +109,7 @@ public class Board {
 
     private ServicesDTO getGamesServices() throws UnirestException {
 
-        HttpResponse<String> response = Unirest.get(getGameService()+"/services").asString();
+        HttpResponse<String> response = Unirest.get(getGameURI()+"/services").asString();
         if(response.getStatus() == 200) {
             ServicesDTO servicesDTO = gson.fromJson(response.getBody(), ServicesDTO.class);
             return servicesDTO;
@@ -119,7 +118,7 @@ public class Board {
 
     private ComponentsDTO getGamesComponents() throws UnirestException {
 
-        HttpResponse<String> response = Unirest.get(getGameService()+"/components").asString();
+        HttpResponse<String> response = Unirest.get(getGameURI()+"/components").asString();
         if(response.getStatus() == 200) {
             ComponentsDTO componentsDTO = gson.fromJson(response.getBody(), ComponentsDTO.class);
             return componentsDTO;
@@ -213,7 +212,7 @@ public class Board {
         setPawnTo(pawnID,jailPos);
     }
 
-    public String getGameURI(){ return gameService+gameID;}
+    public String getGameURI(){ return URLDecoder.decode(gameID);}
 
     public String getId() {
         return id;
@@ -222,8 +221,6 @@ public class Board {
     public String getGameID() {
         return gameID;
     }
-
-    public String getGameService(){ return gameService;}
 
     public Collection<Field> getFieldMap() {
         return fieldList;

@@ -11,9 +11,14 @@ import com.google.gson.JsonSyntaxException;
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
+import com.sun.deploy.net.URLEncoder;
 import com.sun.istack.internal.NotNull;
+import org.apache.http.client.utils.URLEncodedUtils;
 import org.json.JSONObject;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.nio.charset.Charset;
 import java.util.*;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -83,7 +88,7 @@ public class GameManager {
 
 
 
-    private Game createGame(@NotNull GameCreateDTO gameCreateDTO){
+    private Game createGame(GameCreateDTO gameCreateDTO){
 
         // create ID's
         String gamesId = "/games/"+gamesMap.size();
@@ -213,8 +218,7 @@ public class GameManager {
                 // create Components
                 // dice
                 if(services.getDice() != null && !services.getDice().isEmpty()){
-                    String component = RegistrationService.sendPost(services.getDice(),jsonRegistrationObject);
-                    components.setDice(component);
+                    components.setDice(jsonRegistrationObject);
                 }
 
                 // bank
