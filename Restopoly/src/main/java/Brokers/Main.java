@@ -123,11 +123,9 @@ public class Main extends MainAbstract{
             placeID = "/broker/"+gameID+"/places/"+placeID;
 
             String owner = brokerManager.getBrokerOwnerByGameID(gameID, placeID);
-            //TODO  -> impl1
             return owner;
-
-
         });
+
         //:placeID zusätzlich hinzgefügt
         put("/broker/:gameID/places/:placeID/owner", (req,res) -> {
             //siehe oben
@@ -199,7 +197,6 @@ public class Main extends MainAbstract{
 
             String eventListJson = brokerManager.playervisitetInJson(gameID, placeID, playerJsonString); // throws WrongFormatException
             return eventListJson;
-            //TODO  -> Impl6
         });
 
         //TODO Exeptions hinzufügen

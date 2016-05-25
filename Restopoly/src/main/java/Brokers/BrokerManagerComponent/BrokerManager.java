@@ -114,12 +114,24 @@ public class BrokerManager {
         }
     }
 
-    public String getBrokerOwnerByGameID(String gameID, String placeID) {
+    public String getBrokerOwnerByGameID(String gameID, String placeID)
+            throws Exception {
+
         checkNotNull(gameID);
         checkNotNull(placeID);
 
-        //TODO  -> impl1
-        throw new UnsupportedOperationException();
+        Broker broker = getBrokerObjectByID(gameID);
+        BrokerPlace brokerPlace =  broker.getBrokerPlaceByID(placeID);
+
+        //TODO was passiert wenn keine owner existiert
+        if(!brokerPlace.getOwner().isEmpty()) {
+            HttpResponse<String> httpResponse = Unirest.get(brokerPlace.getOwner()).asString();
+            if (httpResponse.getStatus() != 200) throw new WrongResponsCodeException("Game Respons code != 200");
+            return httpResponse.getBody();
+        }
+        //TODO Owner nicht eingetragen -> eventuell statuscode hinzufügen
+        return "";
+
     }
 
     public String updateOwnrByGameID(String gameID, String placeID, String body) {
@@ -127,6 +139,7 @@ public class BrokerManager {
         checkNotNull(placeID);
         checkNotNull(body);
 
+       // Unirest.put();
         //TODO  -> Impl2
         throw new UnsupportedOperationException();
     }
