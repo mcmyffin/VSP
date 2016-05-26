@@ -11,14 +11,9 @@ import com.google.gson.JsonSyntaxException;
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
-import com.sun.deploy.net.URLEncoder;
 import com.sun.istack.internal.NotNull;
-import org.apache.http.client.utils.URLEncodedUtils;
 import org.json.JSONObject;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
-import java.nio.charset.Charset;
 import java.util.*;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -218,7 +213,7 @@ public class GameManager {
                 // create Components
                 // dice
                 if(services.getDice() != null && !services.getDice().isEmpty()){
-                    components.setDice(jsonRegistrationObject);
+                    components.setDice(services.getDice());
                 }
 
                 // bank
