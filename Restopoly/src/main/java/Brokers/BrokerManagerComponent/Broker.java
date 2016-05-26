@@ -1,12 +1,15 @@
 package Brokers.BrokerManagerComponent;
 
 import Brokers.BrokerManagerComponent.DTOs.BrokerDTO;
+import Common.Exceptions.BrokerMaxAmountHousesRichedException;
 import Common.Exceptions.PlaceNotFoundException;
 import com.mashape.unirest.http.exceptions.UnirestException;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -49,6 +52,10 @@ public class Broker {
         int port = (u.getPort() == -1 ? 80 : u.getPort());
 
         return scheme + "://" + host + ":" + port;
+    }
+
+    private String getGameURI(){
+        return gameService+"/games"+gameID;
     }
 
     private String getGameIDFromURI(String uri) throws URISyntaxException {
@@ -148,7 +155,7 @@ public class Broker {
     }
 
     public BrokerDTO toDTO() {
-        BrokerDTO brokerDTO = new BrokerDTO(id,gameService,estates);
+        BrokerDTO brokerDTO = new BrokerDTO(id,getGameURI(),estates);
         return brokerDTO;
     }
 
@@ -163,5 +170,21 @@ public class Broker {
 
     public int getVisitCost(BrokerPlace brokerPlace) {
         return brokerPlace.getRentListe().get(brokerPlace.getHouses());
+    }
+
+    public int getNextCostOfPlace(BrokerPlace brokerPlace) throws BrokerMaxAmountHousesRichedException {
+
+        List<Integer> costList = brokerPlace.getCostList();
+
+        if(brokerPlace.getCostList().size() <= brokerPlace.getHouses()) throw new BrokerMaxAmountHousesRichedException();
+
+        return costList.get(brokerPlace.getHouses());
+    }
+
+    public int getCurrentCostOfPlace(BrokerPlace brokerPlace){
+        List<Integer> costList = brokerPlace.getCostList();
+
+        int houses = brokerPlace.getHouses();
+        return costList.get(houses == 0 ? 0 : houses - 1);
     }
 }

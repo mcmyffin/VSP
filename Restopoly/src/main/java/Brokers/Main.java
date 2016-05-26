@@ -2,7 +2,7 @@ package Brokers;
 
 import Brokers.BrokerManagerComponent.BrokerManager;
 import Common.Abstract.MainAbstract;
-import Common.Exceptions.WrongContentTypeException;
+import Common.Exceptions.*;
 import Common.Util.IPFinder;
 
 import static spark.Spark.*;
@@ -60,13 +60,13 @@ public class Main extends MainAbstract{
             String gameID = req.params(":gameID");
             gameID = "/broker/"+gameID;
 
-            String broker   = brokerManager.getbrokerById(gameID); // muss GameNotFoundException werfen wenn nicht gefunden
+            String broker = brokerManager.getbrokerById(gameID); // muss GameNotFoundException werfen wenn nicht gefunden
             return broker;
         });
 
 
         put("/broker/:gameID", (req, res) -> {
-            //TODO
+            //TODO Put /broker/:gameID
             return "TODO";
         });
 
@@ -136,28 +136,28 @@ public class Main extends MainAbstract{
             String gameID = "/broker/"+req.params(":gameID");
             String placeID = gameID+"/places/"+req.params(":placeID");
 
-            String jsonOwnerString = brokerManager.updateOwnrByGameID(gameID,placeID,req.body());
+            String jsonOwnerString = brokerManager.updateOwnerByGameID(gameID,placeID,req.body());
             res.header("Location",URL+placeID+"/owner");
-            //TODO  -> Impl2
             return jsonOwnerString;
         });
 
         //:placeID zusätzlich hinzgefügt
-        delete("/broker/:gameID/places/:placeID/owner", (req,res) -> {
+        //Buy the estate in question. It will fail if it is not for sale
+        post("/broker/:gameID/places/:placeID/owner", (req,res) -> {
             //siehe oben
             res.status(200);
 
             String gameID = "/broker/"+req.params(":gameID");
             String placeID = gameID+"/places"+req.params(":placeID");
 
-            brokerManager.removeOwnerByGameID(gameID,placeID);
-            return "OK";
-            //TODO  -> Impl3
+            String jsonOwnerString = brokerManager.setOwnerByGameID(gameID,placeID,req.body());
+            res.header("Location",URL+placeID+"/owner");
+            return jsonOwnerString;
+
 
         });
         //:placeID zusätzlich hinzgefügt
         put("/broker/:gameID/places/:placeID/hypothecarycredit", (req,res) -> {
-            //hypothecarycredit unmöglich zu ermitteln auf welche place -> /broker/:gameID/places/:placeID/hypothecarycredit
             res.status(200);
             if(!req.headers("Content-Type").equals("application/json")) throw new WrongContentTypeException();
             res.header("Content-Type","application/json");
@@ -167,7 +167,6 @@ public class Main extends MainAbstract{
 
             String jsonOwnerString = brokerManager.updateHypothecaryByGameID(gameID,placeID,req.body());
             res.header("Location",URL+placeID+"/owner");
-            //TODO  -> Impl4
             return jsonOwnerString;
 
         });
@@ -181,7 +180,6 @@ public class Main extends MainAbstract{
 
             brokerManager.removeHypothecaryByGameID(gameID,placeID);
             return "OK";
-            //TODO  -> Impl5
         });
 
         //:placeID zusätzlich hinzgefügt
@@ -199,7 +197,7 @@ public class Main extends MainAbstract{
             return eventListJson;
         });
 
-        //TODO Exeptions hinzufügen
+
 
         /****** EXCEPTION BEHANDLUNG *******/
         exception(WrongContentTypeException.class, (ex, req, res) -> {
@@ -208,5 +206,41 @@ public class Main extends MainAbstract{
             ex.printStackTrace();
         });
 
+
+        exception(BrokerNotFoundException.class, (ex, req, res) -> {
+            res.status(400);// bad request
+            res.body("Broker Not Found");
+            ex.printStackTrace();
+        });
+
+        exception(PlaceNotFoundException.class, (ex, req, res) -> {
+            res.status(400);// bad request
+            res.body("Place Not Found");
+            ex.printStackTrace();
+        });
+
+//        exception(UnirestException.class, (ex, req, res) -> {
+//            res.status(400);// bad request
+//            res.body("Unirest");
+//            ex.printStackTrace();
+//        });
+
+        exception(TransactionFailedException.class, (ex, req, res) -> {
+            res.status(400);// bad request
+            res.body("Transaction Failed");
+            ex.printStackTrace();
+        });
+
+        exception(BrokerMaxAmountHousesRichedException.class, (ex, req, res) -> {
+            res.status(400);// bad request
+            res.body("Broker Max Amount Houses Riched");
+            ex.printStackTrace();
+        });
+
+        exception(BrokerPlaceWithoutOwnerException.class, (ex, req, res) -> {
+            res.status(400);// bad request
+            res.body("Broker Place Without Owner");
+            ex.printStackTrace();
+        });
     }
 }

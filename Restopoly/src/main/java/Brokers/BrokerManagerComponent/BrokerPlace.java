@@ -21,6 +21,8 @@ public class BrokerPlace {
     private String visit;
     private String hypoCredit;
 
+    private int hypo = 0;
+
     public BrokerPlace(String id, String name, String place, String owner, int value, int[] rentList,
                        int[]  costList, int anzahlHaeuser, String visit, String hypoCredit) {
         this.id = id;
@@ -43,7 +45,10 @@ public class BrokerPlace {
         this.visit = visit;
         this.hypoCredit = hypoCredit;
     }
-    
+
+    public void setOwner(String owner) {
+        this.owner = owner;
+    }
 
     public String getId() {return id;}
 
@@ -82,5 +87,22 @@ public class BrokerPlace {
 
     public void setPlace(String place) {
         this.place = place;
+    }
+
+    boolean isHypothecSet(){
+        return hypo > 0;
+    }
+
+    int getHypothec(){
+        return hypo;
+    }
+
+    void setHypo(int hypo){
+        if(hypo < 0) return;
+        this.hypo = hypo;
+    }
+
+    public boolean hasOwner() {
+        return this.owner != null && !this.owner.isEmpty();
     }
 }
