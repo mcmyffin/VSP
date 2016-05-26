@@ -213,8 +213,7 @@ public class GameManager {
                 // create Components
                 // dice
                 if(services.getDice() != null && !services.getDice().isEmpty()){
-                    String component = RegistrationService.sendPost(services.getDice(),jsonRegistrationObject);
-                    components.setDice(component);
+                    components.setDice(services.getDice());
                 }
 
                 // bank
