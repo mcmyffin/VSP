@@ -83,7 +83,7 @@ public class GameManager {
 
 
 
-    private Game createGame(GameCreateDTO gameCreateDTO){
+    private Game createGame(@NotNull GameCreateDTO gameCreateDTO){
 
         // create ID's
         String gamesId = "/games/"+gamesMap.size();
@@ -213,7 +213,8 @@ public class GameManager {
                 // create Components
                 // dice
                 if(services.getDice() != null && !services.getDice().isEmpty()){
-                    components.setDice(services.getDice());
+                    String component = RegistrationService.sendPost(services.getDice(),jsonRegistrationObject);
+                    components.setDice(component);
                 }
 
                 // bank

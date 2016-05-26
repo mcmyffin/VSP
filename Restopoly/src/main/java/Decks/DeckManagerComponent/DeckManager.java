@@ -9,7 +9,6 @@ import com.google.gson.Gson;
 import org.json.JSONObject;
 
 import java.net.URISyntaxException;
-import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -49,10 +48,9 @@ public class DeckManager {
         JSONObject jsonObject = new JSONObject(body);
         if(!jsonObject.has("game")) throw new WrongFormatException("Game param not found");
 
-        String gameID = jsonObject.getString("game");
-        String encodedGameID = URLEncoder.encode(gameID);
+        String game = jsonObject.getString("game");
 
-        GameDecks gameDecks = new GameDecks(gameID);
+        GameDecks gameDecks = new GameDecks(game);
         if(gameDecksMap.containsKey(gameDecks.getId())) throw new GameDecksAlreadyExistException();
 
         gameDecksMap.put(gameDecks.getId(),gameDecks);

@@ -18,7 +18,6 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.net.URISyntaxException;
-import java.net.URLEncoder;
 import java.util.*;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -184,7 +183,6 @@ public class BoardManager {
         if(!jsonObject.has("game"))  throw new WrongFormatException("can't find \"game\" param");
 
         String gameURI = jsonObject.getString("game");
-        String encodedgameURI = URLEncoder.encode(gameURI);
         Board board = new Board(gameURI);
 
         if(boardGameIDMap.containsKey(board.getId())) throw new BoardAlreadyExistsException();
