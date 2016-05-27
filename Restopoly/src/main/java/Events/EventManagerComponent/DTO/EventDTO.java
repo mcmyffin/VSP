@@ -1,7 +1,6 @@
 package Events.EventManagerComponent.DTO;
 
 import Common.Exceptions.RequiredJsonParamsNotFoundException;
-import com.sun.istack.internal.NotNull;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 

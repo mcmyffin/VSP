@@ -57,7 +57,7 @@ public class Main extends MainAbstract{
 
             String gameJsonString = req.body();
             String gameID = gameManager.createGame(gameJsonString); // throws WrongFormatException
-            res.header("Location",URL+"/"+gameID);
+            res.header("Location",URL+gameID);
             return "OK";
         });
 
@@ -188,7 +188,7 @@ public class Main extends MainAbstract{
             gameID = "/games/"+gameID;
 
             String playerID = gameManager.createPlayer(gameID,req.body()); // muss GameNotFoundException werfen wenn nicht gefunden
-            res.header("Location",URL+"/"+playerID);
+            res.header("Location",URL+playerID);
 
             return "Player created";
         });
