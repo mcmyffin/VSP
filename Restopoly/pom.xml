@@ -98,6 +98,25 @@
                         </configuration>
                     </execution>
 
+                    <execution> <!-- BrokerManager -->
+                        <id>build-broker</id>
+                        <goals>
+                            <goal>attached</goal>
+                        </goals>
+                        <phase>package</phase>
+                        <configuration>
+                            <finalName>vsp_abr824_broker</finalName>
+                            <descriptorRefs>
+                                <descriptorRef>jar-with-dependencies</descriptorRef>
+                            </descriptorRefs>
+                            <archive>
+                                <manifest>
+                                    <mainClass>Brokers.Main</mainClass>
+                                </manifest>
+                            </archive>
+                        </configuration>
+                    </execution>
+
                 </executions>
             </plugin>
         </plugins>
