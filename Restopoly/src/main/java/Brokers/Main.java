@@ -66,8 +66,16 @@ public class Main extends MainAbstract{
 
 
         put("/broker/:gameID", (req, res) -> {
-            //TODO Put /broker/:gameID
-            return "TODO";
+            res.status(200);
+            if(!req.headers("Content-Type").equals("application/json")) throw new WrongContentTypeException();
+            res.header("Content-Type","application/json");
+
+            String gameID = req.params(":gameID");
+            gameID = "/broker/"+gameID;
+
+            String newGameID = brokerManager.updateBrokerByID(gameID, req.body());
+            res.header("Location",URL+newGameID);
+            return "OK";
         });
 
         /**

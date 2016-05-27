@@ -478,4 +478,27 @@ public class BrokerManager {
     }
 
 
+    public String updateBrokerByID(String gameID, String body)
+            throws URISyntaxException, BrokerAlreadyExistsException, WrongFormatException, BrokerNotFoundException {
+
+        checkNotNull(gameID);
+        checkNotNull(body);
+
+        //id von neue Broker Herausfinden
+        BrokerDTO brokerDTO = gson.fromJson(body, BrokerDTO.class);
+        Broker newBroker = Broker.fromDTO(brokerDTO);
+        String newBrokerID = newBroker.getId();
+
+        //id von aktuelle Broker Aktualiesieren
+        Broker currentBroker = getBrokerObjectByID(gameID);
+        BrokerDTO currentBrokerDTO = currentBroker.toDTO();
+        currentBrokerDTO.setId(newBrokerID);
+        Broker newCurrentBroker = Broker.fromDTO(currentBrokerDTO);
+
+        if(brokerMap.containsKey(newCurrentBroker.getId())) { throw new BrokerAlreadyExistsException(); }
+
+        brokerMap.remove(currentBroker.getId(),currentBroker);
+        brokerMap.put(newCurrentBroker.getId(),newCurrentBroker);
+        return newCurrentBroker.getId();
+    }
 }
