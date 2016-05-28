@@ -117,6 +117,25 @@
                         </configuration>
                     </execution>
 
+                    <execution> <!-- BanksManager -->
+                        <id>build-banks</id>
+                        <goals>
+                            <goal>attached</goal>
+                        </goals>
+                        <phase>package</phase>
+                        <configuration>
+                            <finalName>vsp_abp615_banks</finalName>
+                            <descriptorRefs>
+                                <descriptorRef>jar-with-dependencies</descriptorRef>
+                            </descriptorRefs>
+                            <archive>
+                                <manifest>
+                                    <mainClass>Banks.Main</mainClass>
+                                </manifest>
+                            </archive>
+                        </configuration>
+                    </execution>
+
                 </executions>
             </plugin>
         </plugins>
