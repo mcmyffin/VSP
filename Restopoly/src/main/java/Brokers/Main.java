@@ -4,6 +4,7 @@ import Brokers.BrokerManagerComponent.BrokerManager;
 import Common.Abstract.MainAbstract;
 import Common.Exceptions.*;
 import Common.Util.IPFinder;
+import YellowPage.RegistrationService;
 
 import static spark.Spark.*;
 /**
@@ -32,6 +33,9 @@ public class Main extends MainAbstract{
 
         Main main = new Main();
         BrokerManager brokerManager = new BrokerManager();
+
+        RegistrationService registrationService = new RegistrationService(main);
+        registrationService.startRegistration();
 
 
         post("/broker", (req, res) -> {

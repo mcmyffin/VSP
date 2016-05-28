@@ -121,7 +121,6 @@ public class BoardManager {
                                     player,
                                     time
                                 );
-
         try{
             HttpResponse<String> componentsResponse = Unirest.get(game+"/components").asString();
             if(componentsResponse.getStatus() != 200) throw new ServiceNotAvaibleException("Game Service GET - Wrong response code");

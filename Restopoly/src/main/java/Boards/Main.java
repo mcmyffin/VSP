@@ -6,7 +6,6 @@ import Common.Exceptions.*;
 import Common.Util.IPFinder;
 import YellowPage.RegistrationService;
 import YellowPage.YellowPageService;
-import com.google.gson.Gson;
 import org.json.JSONObject;
 import spark.Request;
 import spark.Response;
@@ -321,6 +320,11 @@ public class Main extends MainAbstract{
             ex.printStackTrace();
         });
 
+        exception(ServiceNotAvaibleException.class, (ex, req, res) -> {
+            res.status(500);// not found
+            res.body(ex.getMessage());
+            ex.printStackTrace();
+        });
         /********************/
 
     }
