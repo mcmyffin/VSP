@@ -33,6 +33,7 @@ public class Broker {
         id = "/broker" + gameID;
 
         this.estates = id+"/places";
+        initializePlaces();
     }
 
     public static Broker fromDTO(BrokerDTO brokerDTO) throws URISyntaxException {
@@ -101,7 +102,7 @@ public class Broker {
         placesMap.put(placeID,brokerPlace);
     }
 
-    private void initializePlaces() throws UnirestException {
+    private void initializePlaces() {
 
         //Deutsche Grund version Wiki/Monopoly (abgeschwaecht)
         //Strassen
