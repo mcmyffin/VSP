@@ -6,6 +6,7 @@ import com.mashape.unirest.http.JsonNode;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
 import org.json.JSONArray;
+import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,14 +22,27 @@ public class YellowPageService {
     public static String yellowPageURL = "http://172.18.0.5:4567/services";
     public static String yelloPageAdress = "http://172.18.0.5:4567";
 
-    public static String clearYellowPage() throws UnirestException {
+    public static String clearYellowPage() {
 
-        String txt = "";
-        for(int i = 0; i <= 999 ; i++){
-            HttpResponse<String> response = Unirest.delete(yellowPageURL+"/"+i).body("").asString();
-            txt += "<br>"+response.getBody()+"<br>";
+        try{
+            Gson gson = new Gson();
+            HttpResponse<String> expandedServices = Unirest.get(yellowPageURL+"?expanded").asString();
+            YellowPageListExpandedDTO expandedListDTO = gson.fromJson(expandedServices.getBody(),YellowPageListExpandedDTO.class);
+
+            String txt = "<h1>DEAD SERVICES REMOVED</h1>";
+            for(YellowPageExpandedDTO o : expandedListDTO.getServices()){
+
+                if(o.getStatus() != null && o.getStatus().equals("dead")){
+                    HttpResponse<String> response = Unirest.delete(yelloPageAdress+o.get_uri()).asString();
+
+                    txt += "<p>"+response.getBody()+"</p>";
+                }
+            }
+            return txt;
+        }catch (UnirestException e){
+            e.printStackTrace();
+            return "ERROR";
         }
-        return txt;
     }
 
 
