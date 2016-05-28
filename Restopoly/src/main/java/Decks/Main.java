@@ -146,6 +146,12 @@ public class Main extends MainAbstract{
             ex.printStackTrace();
         });
 
+        exception(ServiceNotAvaibleException.class, (ex, req, res) -> {
+            res.status(500);// not found
+            res.body(ex.getMessage());
+            ex.printStackTrace();
+        });
+
     }
 
     private static void checkContentTypeJson(Request req) throws WrongContentTypeException {
