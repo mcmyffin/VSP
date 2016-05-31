@@ -65,6 +65,7 @@ public class RegistrationService {
     }
 
     public void startRegistration(){
+
         removeOldRegistration();
         buildRegisteration(
                 main.getUrlService(),
@@ -72,6 +73,7 @@ public class RegistrationService {
                 main.getDescription(),
                 main.getService()
         );
+
     }
 
     public YellowPageDTO getResponseRegistration(){
