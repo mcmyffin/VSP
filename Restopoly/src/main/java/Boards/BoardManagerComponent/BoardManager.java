@@ -60,7 +60,7 @@ public class BoardManager {
 
         try{
             HttpResponse<String> gamesPlayerResponse = Unirest.get(playerURI).asString();
-            HttpResponse<String> gamesTurnResponse   = Unirest.get(board.getGameID()+"/players/turn").asString();
+            HttpResponse<String> gamesTurnResponse   = Unirest.get(board.getGameURI().getAbsoluteURI()+"/players/turn").asString();
 
             if(gamesPlayerResponse.getStatus() == 200 && gamesTurnResponse.getStatus() == 200){
 
@@ -80,15 +80,14 @@ public class BoardManager {
     private int getDiceNumber(Board board) throws ServiceNotAvaibleException {
 
         try{
-            String gameURI = board.getGameID();
-            HttpResponse<String> response = Unirest.get(gameURI+"/components").asString();
+            HttpResponse<String> response = Unirest.get(board.getGameURI().getAbsoluteURI()+"/components").asString();
 
             if(response.getStatus() == 200){
 
                 ComponentsDTO componentsDTO = gson.fromJson(response.getBody(),ComponentsDTO.class);
                 String diceURI = componentsDTO.getDice();
 
-                if(diceURI == null) throw new ServiceNotAvaibleException("Dice Service not Avaible");
+                if(diceURI == null) throw new ServiceNotAvaibleException("Dice Service not found");
 
                 HttpResponse<JsonNode> diceResponse = Unirest.get(diceURI).asJson();
                 if(diceResponse.getStatus() == 200){
@@ -107,7 +106,7 @@ public class BoardManager {
     }
 
     private EventDTO createEvent(Board board, Pawn pawn,String type, String name, String reason, String resource) throws ServiceNotAvaibleException, WrongFormatException {
-        String game = board.getGameURI();
+        String game = board.getGameURI().getAbsoluteURI();
         String time = Long.toString(System.currentTimeMillis());
         String player = pawn.getPlayer();
 
@@ -194,12 +193,7 @@ public class BoardManager {
 
 
     public String getBoards() {
-        Collection<Board> boardCollection = boardGameIDMap.values();
-        Collection<String> boards = new ArrayList<>();
-
-        for(Board b : boardCollection){
-            boards.add("/boards"+b.getGameID());
-        }
+        Collection<String> boards = boardGameIDMap.keySet();
 
         JSONObject j = new JSONObject();
         j.put("boards",boards);

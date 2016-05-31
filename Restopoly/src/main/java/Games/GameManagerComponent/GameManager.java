@@ -1,5 +1,7 @@
 package Games.GameManagerComponent;
 
+import Banks.BankManagerComponent.DTOs.AccountDTO;
+import Boards.BoardManagerComponent.DTOs.PawnDTO;
 import Common.Exceptions.*;
 import Games.GameManagerComponent.DTO.*;
 import Games.Main;
@@ -114,47 +116,69 @@ public class GameManager {
     }
 
 
-    private void createBankAccount(String gameID, String playerID) {
+    private void createBankAccount(String gameID, String playerID) throws GameNotFoundException, ServiceNotAvaibleException {
         checkNotNull(gameID);
         checkNotNull(playerID);
 
+        Game g = getGameObjectById(gameID);
+        Components components = g.getComponents();
+        if(components.getBank() == null) throw new ServiceNotAvaibleException("Bank Service not found");
+
         try {
-            Game g = getGameObjectById(gameID);
-            Player p = g.getPlayerManager().getPlayerById(playerID);
+
             int defaultSaldo = 3000;
+            Player p = g.getPlayerManager().getPlayerById(playerID);
+            AccountDTO accountDTO = new AccountDTO(Main.URL+playerID,defaultSaldo);
 
-            HttpResponse<String> response = Unirest.post(g.getComponents().getBank())
-                    .body("{ \"player\":\"" + playerID + "\" , \"saldo\": \"" + defaultSaldo + "\"}").asString();
+            HttpResponse<String> response = Unirest.post(g.getComponents().getBank()+"/accounts")
+                    .header("Content-Type","application/json")
+                    .body(gson.toJson(accountDTO)).asString();
 
-            if (response.getStatus() == 201) {
+            if (response.getStatus() == 201 || response.getStatus() == 20) {
                 String account = response.getHeaders().get("Location").get(0);
                 p.setAccount(account);
+            }else{
+                throw new WrongResponsCodeException("Bank: post ("+g.getComponents().getBank()+"/accounts"+") responsecode != 201/200\n" +
+                                                    "Body: "+response.getBody());
             }
 
-        }catch (GameNotFoundException| UnirestException|PlayerNotFoundException ex){
+        }catch (UnirestException|PlayerNotFoundException ex){
             ex.printStackTrace();
+        } catch (WrongResponsCodeException e) {
+            e.printStackTrace();
         }
     }
 
-    private void createPawn(String gameID, String playerID){
+    private void createPawn(String gameID, String playerID) throws GameNotFoundException, ServiceNotAvaibleException {
         checkNotNull(gameID);
         checkNotNull(playerID);
 
+        Game g = getGameObjectById(gameID);
+        Components components = g.getComponents();
+
+        if(components.getBoard() == null) throw new ServiceNotAvaibleException("Board Service not found");
+
         try {
-            Game g = getGameObjectById(gameID);
+
             Player p = g.getPlayerManager().getPlayerById(playerID);
 
-            HttpResponse<String> response = Unirest.post(g.getComponents().getBoard())
-                                                .body("{\"player\":\""+playerID+"\"}")
+            HttpResponse<String> response = Unirest.post(g.getComponents().getBoard()+"/pawns")
+                                                .header("Content-Type","application/json")
+                                                .body("{\"player\":\""+Main.URL+playerID+"\"}")
                                                 .asString();
             // if is created Response Status
-            if(response.getStatus() == 201){
+            if(response.getStatus() == 201 || response.getStatus() == 200){
                 String pawn = response.getHeaders().get("Location").get(0);
                 p.setPawn(pawn);
+            }else{
+                throw new WrongResponsCodeException("Board: post ("+g.getComponents().getBoard()+"/pawns"+") responsecode != 201/200\n" +
+                                                    "Body: "+response.getBody());
             }
 
-        }catch (GameNotFoundException|PlayerNotFoundException|UnirestException ex){
+        }catch (PlayerNotFoundException|UnirestException ex){
             ex.printStackTrace();
+        } catch (WrongResponsCodeException e) {
+            e.printStackTrace();
         }
     }
 
@@ -206,6 +230,11 @@ public class GameManager {
                     if(dto.getService().equals("dice")) services.setDice(dto.getUri());
                 }
 
+            }catch (UnirestException ex){
+                ex.printStackTrace();
+            }
+
+            try {
                 JSONObject jsonObject = new JSONObject();
                 jsonObject.put("game",Main.URL+game.getId());
                 String jsonRegistrationObject = jsonObject.toString();
@@ -236,12 +265,15 @@ public class GameManager {
                     String component = RegistrationService.sendPost(services.getDeck(),jsonRegistrationObject);
                     components.setDeck(component);
                 }
-                // event
-                components.setEvent(services.getEvent());
-
+                if(services.getEvent() != null && !services.getEvent().isEmpty()){
+                    // event
+                    components.setEvent(services.getEvent());
+                }
             }catch (UnirestException ex){
                 ex.printStackTrace();
             }
+
+
 
             return game.getId();
 
@@ -336,7 +368,7 @@ public class GameManager {
         return gson.toJson(playerDTOCollection);
     }
 
-    public String createPlayer(String gameID, String playerJsonString) throws GameNotFoundException, WrongFormatException, GameFullException {
+    public String createPlayer(String gameID, String playerJsonString) throws GameNotFoundException, WrongFormatException, GameFullException, ServiceNotAvaibleException {
 
         try{
             PlayerDTO playerDTO = gson.fromJson(playerJsonString,PlayerDTO.class);
@@ -438,6 +470,7 @@ public class GameManager {
 
     public void removePlayerTurn(String gameID) throws GameNotFoundException {
 
+        // TODO neuen Player benachrichtigen, wenn er am Zug ist !!!
         Game g = getGameObjectById(gameID);
         g.removeMutex();
     }

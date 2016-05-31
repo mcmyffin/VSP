@@ -25,8 +25,8 @@ public class Transaction {
     public synchronized void setTransferAction(String state) throws UndefinedTransactionStateException, IllegalTransactionStateException {
         checkNotNull(state);
 
-        if(this.state.equals(TransferState.COMMITED)) throw new IllegalTransactionStateException();
-        if(this.state.equals(TransferState.ROLLBACK)) throw new IllegalTransactionStateException();
+        if(this.state.equals(TransferState.COMMITED)) throw new IllegalTransactionStateException("Transaktion state COMMITED");
+        if(this.state.equals(TransferState.ROLLBACK)) throw new IllegalTransactionStateException("Transaktion state ROLLBACK");
 
         try{
             TransferAction transferAction = TransferAction.valueOf(state);
@@ -40,10 +40,10 @@ public class Transaction {
 
             // Transaction ist beim Commit fehlgeschlagen
             }else if(this.state.equals(TransferState.FAILED)){
-                if(transferAction.equals(TransferAction.ROLLBACK)){
+                if(transferAction.equals(TransferAction.ROLLBACK) || transferAction.equals(TransferAction.RADY)){
                     this.state = TransferState.ROLLBACK;
                     runRollback();
-                }else throw new IllegalTransactionStateException();
+                }
             }
 
 
@@ -85,6 +85,25 @@ public class Transaction {
 
     public List<Transfer> getTransfersList() {
         return transfersList;
+    }
+
+    public void addTransfer(Transfer t) throws IllegalTransactionStateException {
+        if(this.state != TransferState.READY || this.state != TransferState.FAILED)
+                        throw new IllegalTransactionStateException("Transaktion abgelaufen");
+        this.transfersList.add(t);
+    }
+
+    void checkTransfers(){
+        for(Transfer t : transfersList){
+
+            // Wenn ein Transfer Object fehlerhaft, dann setzte Status auf "FAILED
+            // Somit ist weitere Suche unnötig"
+            if(!t.getState()){
+                this.state = TransferState.FAILED;
+                return;
+            }
+
+        }
     }
 }
 

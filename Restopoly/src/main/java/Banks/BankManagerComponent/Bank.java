@@ -2,10 +2,7 @@ package Banks.BankManagerComponent;
 
 import Banks.BankManagerComponent.DTOs.AccountDTO;
 import Banks.BankManagerComponent.DTOs.BankDTO;
-import Common.Exceptions.AccountNotFoundException;
-import Common.Exceptions.TransactionNotFoundException;
-import Common.Exceptions.TransferFailedException;
-import Common.Exceptions.TransferNotFoundException;
+import Common.Exceptions.*;
 import Common.Util.URIObject;
 
 import java.util.Collection;
@@ -141,6 +138,40 @@ public class Bank {
         return transferID;
     }
 
+    public synchronized String createTransferFromTo(String fromAccount, String toAccount, int amount, String reason, String transactionID)
+            throws TransferFailedException, AccountNotFoundException, TransactionNotFoundException, IllegalTransactionStateException {
+        checkNotNull(fromAccount);
+        checkNotNull(toAccount);
+        checkNotNull(reason);
+        checkNotNull(transactionID);
+
+        // get Transaction
+        Transaction transaction = getTransactionById(transactionID);
+
+        // create Transfer Object
+        String transferID = getNextTransferID();
+        Transfer newTransfer = new Transfer(transferID,null,null,amount,reason,false);
+
+        transaction.addTransfer(newTransfer);
+
+        if(amount <= 0) throw new TransferFailedException("Illegal amount value");
+
+        Account from = getAccountById(fromAccount);
+        Account to   = getAccountById(toAccount);
+
+        if(from.getSaldo() < amount) throw new TransferFailedException("Tranfer faild. Account: "+fromAccount+" insufficient fonds !");
+
+        newTransfer.setFrom(from);
+        newTransfer.setTo(to);
+        newTransfer.setState(true);
+
+        from.substractMoney(amount);
+        to.addMoney(amount);
+
+        transfersMap.put(transferID,newTransfer);
+        return transferID;
+    }
+
     public String createTransferTo(String toAccount, int amount, String reason) throws TransferFailedException, AccountNotFoundException {
         checkNotNull(toAccount);
         checkNotNull(reason);
@@ -153,6 +184,32 @@ public class Bank {
         String transferID = getNextTransferID();
         Transfer newTransfer = new Transfer(transferID,null,to,amount,reason,true);
 
+        to.addMoney(amount);
+
+        transfersMap.put(transferID,newTransfer);
+        return transferID;
+    }
+
+    public String createTransferTo(String toAccount, int amount, String reason, String transactionID) throws TransferFailedException, AccountNotFoundException, TransactionNotFoundException, IllegalTransactionStateException {
+        checkNotNull(toAccount);
+        checkNotNull(reason);
+
+        // get Transaction
+        Transaction transaction = getTransactionById(transactionID);
+
+        // create Transfer Object
+        String transferID = getNextTransferID();
+        Transfer newTransfer = new Transfer(transferID,null,null,amount,reason,false);
+
+        transaction.addTransfer(newTransfer);
+
+        if(amount <= 0) throw new TransferFailedException("Illegal amount value");
+        Account to   = getAccountById(toAccount);
+
+        if(to.getSaldo() < amount) throw new TransferFailedException("Tranfer faild. Account: "+toAccount+" insufficient fonds !");
+
+        newTransfer.setTo(to);
+        newTransfer.setState(true);
         to.addMoney(amount);
 
         transfersMap.put(transferID,newTransfer);
@@ -177,6 +234,32 @@ public class Bank {
         return transferID;
     }
 
+    public String createTransferFrom(String fromAccount, int amount, String reason, String transactionID) throws TransferFailedException, AccountNotFoundException, TransactionNotFoundException, IllegalTransactionStateException {
+        checkNotNull(fromAccount);
+        checkNotNull(reason);
+
+        // get Transaction
+        Transaction transaction = getTransactionById(transactionID);
+
+        // create Transfer Object
+        String transferID = getNextTransferID();
+        Transfer newTransfer = new Transfer(transferID,null,null,amount,reason,false);
+
+        transaction.addTransfer(newTransfer);
+
+        if(amount <= 0) throw new TransferFailedException("Illegal amount value");
+
+        Account from = getAccountById(fromAccount);
+        if(from.getSaldo() < amount) throw new TransferFailedException("Tranfer faild. Account: "+from+" insufficient fonds !");
+
+        newTransfer.setFrom(from);
+        newTransfer.setState(true);
+        from.substractMoney(amount);
+
+        transfersMap.put(transferID,newTransfer);
+        return transferID;
+    }
+
     public String createTransactionId() {
 
         String transactionID = getNextTransactionID();
@@ -188,7 +271,7 @@ public class Bank {
 
     public Transaction getTransactionById(String transactionID) throws TransactionNotFoundException {
         checkNotNull(transactionID);
-        if(!transactionMap.containsKey(transactionID)) throw new TransactionNotFoundException();
+        if(!transactionMap.containsKey(transactionID)) throw new TransactionNotFoundException("Transaktion nicht gefunden");
 
         return transactionMap.get(transactionID);
     }

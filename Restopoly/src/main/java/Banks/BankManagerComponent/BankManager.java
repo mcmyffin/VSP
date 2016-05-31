@@ -44,6 +44,7 @@ public class BankManager {
     }
 
     private EventDTO createEvent(Bank bank, String type, String name, String reason, String resource) throws ServiceNotAvaibleException, WrongFormatException {
+
         String game = bank.getGameURIObject().getAbsoluteURI();
         String time = Long.toString(System.currentTimeMillis());
         String player = "";
@@ -59,13 +60,21 @@ public class BankManager {
         );
 
         try{
+            System.out.println("Create Event:");
+            System.out.println("get("+game+"/components)");
+
             HttpResponse<String> componentsResponse = Unirest.get(game+"/components").asString();
             if(!componentsResponse.getHeaders().get("Content-Type").contains("application/json")) throw new ServiceNotAvaibleException("Games Service response wrong");
 
-            String eventManagerURI = gson.fromJson(componentsResponse.getBody(),ComponentsDTO.class).getEvent();
+            System.out.println("Response -> "+componentsResponse.getBody());
 
-            HttpResponse<String> eventPostResponse = Unirest.post(eventManagerURI).header("Content-Type","application/json").body(eventPostDTO).asString();
-            if(eventPostResponse.getStatus() != 201 || eventPostResponse.getStatus() != 200) throw new ServiceNotAvaibleException("Event Service POST -  Wrong response code");
+            String eventManagerURI = gson.fromJson(componentsResponse.getBody(),ComponentsDTO.class).getEvent();
+            if(eventManagerURI == null || eventManagerURI.isEmpty()) throw new ServiceNotAvaibleException("Event Service not found");
+
+            HttpResponse<String> eventPostResponse = Unirest.post(eventManagerURI).header("Content-Type","application/json").body(gson.toJson(eventPostDTO)).asString();
+            if(eventPostResponse.getStatus() != 201) throw new ServiceNotAvaibleException("Event Service POST -  Wrong response code\n" +
+                                                        "RESPONSECODE: "+eventPostResponse.getStatus()+"\n" +
+                                                        "BODY: "+eventPostResponse.getBody());
 
             HttpResponse<String> eventGetResponse = Unirest.get(eventPostResponse.getHeaders().getFirst("Location")).asString();
             if(eventGetResponse.getStatus() != 200) throw new ServiceNotAvaibleException("Event Service GET - Wrong response code");
@@ -84,10 +93,9 @@ public class BankManager {
 
     public String getBanks() {
         Collection<String> banksCollection = bankMap.keySet();
-        JSONObject jsonObject = new JSONObject();
 
-        jsonObject.put("banks", gson.toJson(banksCollection));
-        return jsonObject.toString();
+        String jsonArray = "{ \"banks\" : "+gson.toJson(banksCollection)+" }";
+        return jsonArray;
     }
 
     public String createBank(String jsonBody) throws WrongFormatException, URISyntaxException, BankAlreadyExistsException {
@@ -171,8 +179,38 @@ public class BankManager {
         return gson.toJson(transferDTO);
     }
 
-    public String createTransferFromTo(String bankID, String fromAccount, String toAccount, int amount, String reason, String transactionID) {
-        throw new UnsupportedOperationException();
+    public Pair<String,String> createTransferFromTo(String bankID, String fromAccount, String toAccount, int amount, String reason, String transactionID)
+            throws BankNotFoundException, ServiceNotAvaibleException, WrongFormatException, IllegalTransactionStateException,
+                    AccountNotFoundException, TransferFailedException, TransactionNotFoundException {
+        checkNotNull(bankID);
+        checkNotNull(fromAccount);
+        checkNotNull(toAccount);
+        checkNotNull(reason);
+        checkNotNull(transactionID);
+
+        Bank bank = getBankObjectById(bankID);
+        String transferID = bank.createTransferFromTo(fromAccount,toAccount,amount,reason,transactionID);
+
+        List<EventDTO> eventList = new ArrayList();
+
+        // create Event
+        EventDTO event = createEvent(
+                bank,
+                "bank transfer from/to Account",
+                "Bank Transfer",
+                reason,
+                Main.URL+transferID
+        );
+
+        // add Event to List
+        eventList.add(event);
+
+        // convert to JsonString
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put("events",gson.toJson(eventList));
+
+        // create Pair<transferID,EventJsonArrayString>
+        return new Pair<String,String>(transferID,jsonObject.toString());
     }
 
     public Pair<String,String> createTransferFromTo(String bankID, String fromAccount, String toAccount, int amount, String reason)
@@ -207,20 +245,16 @@ public class BankManager {
         return new Pair<String,String>(transferID,jsonObject.toString());
     }
 
-    public String createTransferTo(String bankID, String toAccount, int amount, String reason, String transactionID) {
-        throw new UnsupportedOperationException();
-    }
-
-    public Pair<String,String> createTransferTo(String bankID, String toAccount, int amount, String reason)
-            throws BankNotFoundException, ServiceNotAvaibleException, WrongFormatException, TransferFailedException, AccountNotFoundException {
+    public Pair<String,String> createTransferTo(String bankID, String toAccount, int amount, String reason, String transactionID) throws ServiceNotAvaibleException, WrongFormatException, BankNotFoundException, IllegalTransactionStateException, AccountNotFoundException, TransferFailedException, TransactionNotFoundException {
         checkNotNull(bankID);
         checkNotNull(toAccount);
         checkNotNull(reason);
+        checkNotNull(transactionID);
 
         Bank bank = getBankObjectById(bankID);
-        List<EventDTO> eventList = new ArrayList();
+        String transferID = bank.createTransferTo(toAccount,amount,reason,transactionID);
 
-        String transferID = bank.createTransferTo(toAccount,amount,reason);
+        List<EventDTO> eventList = new ArrayList();
 
         // create Event
         EventDTO event = createEvent(
@@ -242,8 +276,67 @@ public class BankManager {
         return new Pair<String,String>(transferID,jsonObject.toString());
     }
 
-    public String createTransferFrom(String bankID, String fromAccount, int amount, String reason, String transactionID) {
-        throw new UnsupportedOperationException();
+    public Pair<String,String> createTransferTo(String bankID, String toAccount, int amount, String reason)
+            throws BankNotFoundException, ServiceNotAvaibleException, WrongFormatException, TransferFailedException, AccountNotFoundException {
+        checkNotNull(bankID);
+        checkNotNull(toAccount);
+        checkNotNull(reason);
+
+        Bank bank = getBankObjectById(bankID);
+        String transferID = bank.createTransferTo(toAccount,amount,reason);
+
+        List<EventDTO> eventList = new ArrayList();
+
+        // create Event
+        EventDTO event = createEvent(
+                bank,
+                "bank transfer to Account",
+                "Bank Transfer",
+                reason,
+                Main.URL+transferID
+        );
+
+        // add Event to List
+        eventList.add(event);
+
+        // convert to JsonString
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put("events",gson.toJson(eventList));
+
+        // create Pair<transferID,EventJsonArrayString>
+        return new Pair<String,String>(transferID,jsonObject.toString());
+    }
+
+    public Pair<String,String> createTransferFrom(String bankID, String fromAccount, int amount, String reason, String transactionID) throws BankNotFoundException, TransactionNotFoundException, TransferFailedException, AccountNotFoundException, IllegalTransactionStateException, ServiceNotAvaibleException, WrongFormatException {
+        checkNotNull(bankID);
+        checkNotNull(fromAccount);
+        checkNotNull(reason);
+        checkNotNull(transactionID);
+
+        Bank bank = getBankObjectById(bankID);
+        String transferID = bank.createTransferFrom(fromAccount,amount,reason,transactionID);
+
+        List<EventDTO> eventList = new ArrayList();
+
+        // create Event
+        EventDTO event = createEvent(
+                bank,
+                "bank transfer from Account",
+                "Bank Transfer",
+                reason,
+                Main.URL+transferID
+        );
+
+        // add Event to List
+        eventList.add(event);
+
+        // convert to JsonString
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put("events",gson.toJson(eventList));
+
+        // create Pair<transferID,EventJsonArrayString>
+        return new Pair<String,String>(transferID,jsonObject.toString());
+
     }
 
     public Pair<String,String> createTransferFrom(String bankID, String fromAccount, int amount, String reason) throws BankNotFoundException, ServiceNotAvaibleException, WrongFormatException, TransferFailedException, AccountNotFoundException {
