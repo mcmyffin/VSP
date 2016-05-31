@@ -13,7 +13,7 @@ public class Transfer {
     private int amount;
     private String reason;
 
-    private final boolean state;
+    private boolean state;
 
     public Transfer(String id, Account from, Account to, int amount, String reason, boolean state) {
         this.id = id;
@@ -21,6 +21,26 @@ public class Transfer {
         this.to = to;
         this.amount = amount;
         this.reason = reason;
+        this.state = state;
+    }
+
+    void setFrom(Account from) {
+        this.from = from;
+    }
+
+    void setTo(Account to) {
+        this.to = to;
+    }
+
+    void setAmount(int amount) {
+        this.amount = amount;
+    }
+
+    void setReason(String reason) {
+        this.reason = reason;
+    }
+
+    void setState(boolean state) {
         this.state = state;
     }
 
@@ -32,8 +52,16 @@ public class Transfer {
         return from;
     }
 
+    public String getFromId() {
+        return (from == null ? "" : from.getId());
+    }
+
     public Account getTo() {
         return to;
+    }
+
+    public String getToId() {
+        return (to == null ? "" : to.getId());
     }
 
     public int getAmount() {
@@ -51,10 +79,12 @@ public class Transfer {
     public TransferDTO toDTO() {
         return new TransferDTO(
                 getId(),
-                getFrom().getId(),
-                getTo().getId(),
+                getFromId(),
+                getToId(),
                 getAmount(),
                 getReason()
         );
     }
+
+
 }

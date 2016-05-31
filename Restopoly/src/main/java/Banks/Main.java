@@ -137,12 +137,18 @@ public class Main extends MainAbstract{
             String reason = req.body();
 
             // eventuell den Querry parameter beachten
-            // TODO Querryparam nicht klar aus der yaml !!!!
+            String transactionID = req.queryParams("transaction");
 
-            // muss location header hier gesetzt werden ??
-            Pair<String,String> transactionPair = bankManager.createTransferFromTo(bankID, fromAccount, toAccount, amount, reason);
-            setLocationHeader(res,URL+transactionPair.getKey());
-            return transactionPair.getValue();
+            if(transactionID == null){
+                Pair<String,String> transactionPair = bankManager.createTransferFromTo(bankID, fromAccount, toAccount, amount, reason);
+                setLocationHeader(res,URL+transactionPair.getKey());
+                return transactionPair.getValue();
+            }else{
+                transactionID = bankID+"/transaction/"+transactionID;
+                Pair<String,String> transactionPair = bankManager.createTransferFromTo(bankID,fromAccount,toAccount,amount,reason,transactionID);
+                setLocationHeader(res,URL+transactionPair.getKey());
+                return transactionPair.getValue();
+            }
         });
 
         /**
@@ -159,12 +165,18 @@ public class Main extends MainAbstract{
             String reason = req.body();
 
             // eventuell den Querry parameter beachten
-            // TODO Querryparam nicht klar aus der yaml !!!!
+            String transactionID = req.queryParams("transaction");
 
-            // muss location header hier gesetzt werden ??
-            Pair<String,String> transactionPair = bankManager.createTransferTo(bankID, toAccount, amount, reason);
-            setLocationHeader(res,URL+transactionPair.getKey());
-            return transactionPair.getValue();
+            if(transactionID == null){
+                Pair<String,String> transactionPair = bankManager.createTransferTo(bankID, toAccount, amount, reason);
+                setLocationHeader(res,URL+transactionPair.getKey());
+                return transactionPair.getValue();
+            }else{
+                transactionID = bankID+"/transaction/"+transactionID;
+                Pair<String,String> transactionPair = bankManager.createTransferTo(bankID, toAccount, amount, reason,transactionID);
+                setLocationHeader(res,URL+transactionPair.getKey());
+                return transactionPair.getValue();
+            }
         });
 
         /**
@@ -182,18 +194,24 @@ public class Main extends MainAbstract{
             String reason = req.body();
 
             // eventuell den Querry parameter beachten
-            // TODO Querryparam nicht klar aus der yaml !!!!
+            String transactionID = req.queryParams("transaction");
 
-            // muss location header hier gesetzt werden ??
-            Pair<String,String> transactionPair = bankManager.createTransferFrom(bankID, fromAccount, amount, reason);
-            setLocationHeader(res,URL+transactionPair.getKey());
-            return transactionPair.getValue();
+            if(transactionID == null){
+                Pair<String,String> transactionPair = bankManager.createTransferFrom(bankID, fromAccount, amount, reason);
+                setLocationHeader(res,URL+transactionPair.getKey());
+                return transactionPair.getValue();
+            }else{
+                transactionID = bankID+"/transaction/"+transactionID;
+                Pair<String,String> transactionPair = bankManager.createTransferFrom(bankID, fromAccount, amount, reason,transactionID);
+                setLocationHeader(res,URL+transactionPair.getKey());
+                return transactionPair.getValue();
+            }
         });
 
         /**
          * begins a new transaction
          */
-        post("/banks/bankID/transaction", (req, res) -> {
+        post("/banks/:bankID/transaction", (req, res) -> {
             res.status(200);
             setResponseContentTypeJson(res);
 
@@ -231,6 +249,8 @@ public class Main extends MainAbstract{
             // get Querryparameter
             // TODO wie sollen diese aussehen ????
             String state = req.queryParams("state");
+            if(state == null) throw new QuerryParamsNotFoundException("Querry param \"state\" not found");
+            state = state.toUpperCase();
 
             String transactionJsonString = bankManager.updateTransactionById(bankID, transactionID, state);
             return transactionJsonString;
@@ -354,6 +374,18 @@ public class Main extends MainAbstract{
         exception(ServiceNotAvaibleException.class, (ex, req, res) -> {
             res.status(500);// not found
             res.body(ex.getMessage());
+            ex.printStackTrace();
+        });
+
+        exception(QuerryParamsNotFoundException.class, (ex, req, res) -> {
+            res.status(400);// bad request
+            res.body(""+ex.getMessage());
+            ex.printStackTrace();
+        });
+
+        exception(TransactionFailedException.class, (ex, req, res) -> {
+            res.status(403);// bad request
+            res.body(""+ex.getMessage());
             ex.printStackTrace();
         });
 
