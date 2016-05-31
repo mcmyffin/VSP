@@ -1,11 +1,14 @@
 package Games.GameManagerComponent;
 
-import Common.Exceptions.GameStateException;
-import Common.Exceptions.MutexNotReleasedException;
-import Common.Exceptions.PlayerNotFoundException;
-import Common.Exceptions.PlayersWrongTurnException;
+import Common.Exceptions.*;
 import Games.GameManagerComponent.DTO.GameCreateDTO;
 import Games.GameManagerComponent.DTO.GameDTO;
+import Games.Main;
+import com.mashape.unirest.http.HttpResponse;
+import com.mashape.unirest.http.JsonNode;
+import com.mashape.unirest.http.Unirest;
+import com.mashape.unirest.http.exceptions.UnirestException;
+import org.json.JSONObject;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -105,7 +108,9 @@ public class Game {
 
             if(!currentPlayer.equals(p)) throw new PlayersWrongTurnException();
             mutex.release();
-            playerManager.getNextPlayer();
+
+            Player nextPlayer = playerManager.getNextPlayer();
+            notifyPlayersTurn(nextPlayer);
 
         }else{
             // TODO wenn spiel im FINISHED status
@@ -164,10 +169,37 @@ public class Game {
         if(getStatus().equals(GameStatus.REGISTRATION)){
             if(playerManager.isPlayersReadyToStart()){
                 status = GameStatus.RUNNING;
-                // TODO ...
+
+                // Der Spieler der am zug ist benachrichtigen
+                Player p = playerManager.getCurrentPlayer();
+                notifyPlayersTurn(p);
+
             }
         }
     }
+
+    private void notifyPlayersTurn(Player p){
+        try{
+            if(p.getUser() == null || p.getUser().isEmpty()) throw new ServiceNotAvaibleException("UserURI not found in Player");
+
+            String userURI = p.getUser();
+            HttpResponse<JsonNode> userResponse = Unirest.get(userURI).asJson();
+
+            // check response
+            if(userResponse.getStatus() != 200) throw new WrongResponsCodeException("Statuscode: "+userResponse.getStatus()+"\nBody: "+userResponse.getBody());
+
+            JSONObject jsonObject = userResponse.getBody().getObject();
+            String clientURI = jsonObject.getString("uri");
+
+            Unirest.post(clientURI).header("Content-Type","application/json")
+                                    .body("{ \"player\" : \""+ Main.URL+p.getId()+"\"}");
+
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+
+    }
+
 
     private void tryToStopGame(){
         // TODO

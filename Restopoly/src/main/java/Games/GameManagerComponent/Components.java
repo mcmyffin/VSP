@@ -107,6 +107,18 @@ public class Components {
         this.events = events;
     }
 
+    public void update(ComponentsDTO dto){
+        checkNotNull(dto);
+
+        if(dto.getGame() != null)   game    = dto.getGame();
+        if(dto.getBroker() != null) broker  = dto.getBroker();
+        if(dto.getDice() != null)   dice    = dto.getDice();
+        if(dto.getBank() != null)   bank    = dto.getBank();
+        if(dto.getBoard() != null)  board   = dto.getBoard();
+        if(dto.getDecks() != null)  decks   = dto.getDecks();
+        if(dto.getEvent() != null)  events  = dto.getEvent();
+    }
+
     public ComponentsDTO toDTO(){
         return new ComponentsDTO(
                 id,
