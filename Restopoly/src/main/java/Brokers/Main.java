@@ -124,7 +124,6 @@ public class Main extends MainAbstract{
             return brokerManager.getPlaceJsonStringByID(gameID, placeID);
         });
 
-        //:placeID zusätzlich hinzgefügt
         get("/broker/:gameID/places/:placeID/owner", (req,res) -> {
             //owner unmöglich zu ermitteln auf welche place -> /broker/:gameID/places/:placeID/owner
             res.status(200);
@@ -132,7 +131,7 @@ public class Main extends MainAbstract{
 
             String gameID = "/broker/"+req.params(":gameID");
             String placeID = req.params(":placeID");
-            placeID = "/broker/"+gameID+"/places/"+placeID;
+            placeID = gameID+"/places/"+placeID;
 
             String owner = brokerManager.getBrokerOwnerByGameID(gameID, placeID);
             return owner;
@@ -153,7 +152,6 @@ public class Main extends MainAbstract{
             return jsonOwnerString;
         });
 
-        //:placeID zusätzlich hinzgefügt
         //Buy the estate in question. It will fail if it is not for sale
         post("/broker/:gameID/places/:placeID/owner", (req,res) -> {
             //siehe oben
@@ -236,6 +234,12 @@ public class Main extends MainAbstract{
 //            res.body("Unirest");
 //            ex.printStackTrace();
 //        });
+
+        exception(WrongFormatException.class, (ex, req, res) -> {
+            res.status(400);// bad request
+            res.body("Wrong Format");
+            ex.printStackTrace();
+        });
 
         exception(TransactionFailedException.class, (ex, req, res) -> {
             res.status(400);// bad request

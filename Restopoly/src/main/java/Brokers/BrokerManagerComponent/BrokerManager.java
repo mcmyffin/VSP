@@ -88,8 +88,6 @@ public class BrokerManager {
         BrokerPlace brokerPlace = broker.getBrokerPlaceByID(placeID);
 
         return gson.toJson(brokerPlace.toDTO());
-
-
     }
 
     public boolean updatePlaceByID(String gameID, String placeID, String body) throws BrokerNotFoundException,
@@ -484,21 +482,24 @@ public class BrokerManager {
         checkNotNull(gameID);
         checkNotNull(body);
 
+        //id von aktuelle Broker Aktualiesieren
+        Broker currentBroker = getBrokerObjectByID(gameID);
+
         //id von neue Broker Herausfinden
         BrokerDTO brokerDTO = gson.fromJson(body, BrokerDTO.class);
         Broker newBroker = Broker.fromDTO(brokerDTO);
-        String newBrokerID = newBroker.getId();
 
-        //id von aktuelle Broker Aktualiesieren
-        Broker currentBroker = getBrokerObjectByID(gameID);
-        BrokerDTO currentBrokerDTO = currentBroker.toDTO();
-        currentBrokerDTO.setId(newBrokerID);
-        Broker newCurrentBroker = Broker.fromDTO(currentBrokerDTO);
+        if(brokerMap.containsKey(newBroker.getId())) { throw new BrokerAlreadyExistsException(); }
 
-        if(brokerMap.containsKey(newCurrentBroker.getId())) { throw new BrokerAlreadyExistsException(); }
+        String gameURI = newBroker.getGameURI();
+        newBroker = currentBroker.updateGameID(gameURI);
 
-        brokerMap.remove(currentBroker.getId(),currentBroker);
-        brokerMap.put(newCurrentBroker.getId(),newCurrentBroker);
-        return newCurrentBroker.getId();
+        brokerMap.remove(currentBroker.getId());
+        brokerMap.put(newBroker.getId(),newBroker);
+
+        // debug post condition
+        if(!brokerMap.containsKey(newBroker.getId())) throw new RuntimeException("PROBLEM");
+
+        return newBroker.getId();
     }
 }

@@ -3,14 +3,12 @@ package Brokers.BrokerManagerComponent;
 import Brokers.BrokerManagerComponent.DTOs.BrokerDTO;
 import Common.Exceptions.BrokerMaxAmountHousesRichedException;
 import Common.Exceptions.PlaceNotFoundException;
+import Common.Util.*;
 import com.mashape.unirest.http.exceptions.UnirestException;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -20,20 +18,26 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class Broker {
 
     private final String id;
-    private String gameID;
-    private String gameService;
+    private URIObject gamesURIObject;
     private String estates;
     private Map<String, BrokerPlace> placesMap;
 
     public Broker(String game, String estates) throws URISyntaxException {
 
         placesMap = new HashMap();
-        gameID = getGameIDFromURI(game);
-        gameService = getHostFromURI(game);
-        id = "/broker" + gameID;
+        gamesURIObject = URIParser.createURIObject(game);
+        id = "/broker" + gamesURIObject.getId();
 
         this.estates = id+"/places";
         initializePlaces();
+    }
+
+    public Broker updateGameID(String gameURI) throws URISyntaxException {
+        checkNotNull(gameURI);
+
+        Broker b = new Broker(gameURI,null);
+        b.addAllBrokerplaces(this.placesMap.values());
+        return b;
     }
 
     public static Broker fromDTO(BrokerDTO brokerDTO) throws URISyntaxException {
@@ -43,6 +47,17 @@ public class Broker {
         return broker;
     }
 
+    private void addAllBrokerplaces(Collection<BrokerPlace> brokerPlaceCollection){
+
+        for(BrokerPlace b : brokerPlaceCollection){
+            // update ID
+            String brokerPlaceID = getNextBrokerplaceID();
+            b.updateBrokerplaceID(brokerPlaceID);
+
+            // instert to MAP
+            placesMap.put(brokerPlaceID,b);
+        }
+    }
 
     private String getHostFromURI(String uri) throws URISyntaxException {
         URI u = URI.create(uri);
@@ -55,8 +70,8 @@ public class Broker {
         return scheme + "://" + host + ":" + port;
     }
 
-    private String getGameURI(){
-        return gameService+"/games"+gameID;
+    public String getGameURI(){
+        return gamesURIObject.getAbsoluteURI();
     }
 
     private String getGameIDFromURI(String uri) throws URISyntaxException {
@@ -98,7 +113,7 @@ public class Broker {
         String visit = this.id+"/places/visit";
         String hypocredit = this.id+"places/hypothecarycredit";
 
-        BrokerPlace brokerPlace = new BrokerPlace(placeID,name,place, owner,value,rent, cost, houses, visit, hypocredit);
+        BrokerPlace brokerPlace = BrokerPlace.createBrokerplace(placeID,name,place, owner,value,rent, cost, houses, visit, hypocredit);
         placesMap.put(placeID,brokerPlace);
     }
 
@@ -152,7 +167,7 @@ public class Broker {
     }
 
     public String getGameService() {
-        return gameService;
+        return gamesURIObject.getHost();
     }
 
     public BrokerDTO toDTO() {

@@ -10,7 +10,7 @@ import java.util.List;
  * Created by sasa on 12.05.16.
  */
 public class BrokerPlace {
-    private final String id;
+    private String id;
     private String name;
     private String place;
     private String owner;
@@ -23,16 +23,17 @@ public class BrokerPlace {
 
     private int hypo = 0;
 
-    public BrokerPlace(String id, String name, String place, String owner, int value, int[] rentList,
+    public static BrokerPlace createBrokerplace(String id, String name, String place, String owner, int value, int[] rentList,
                        int[]  costList, int anzahlHaeuser, String visit, String hypoCredit) {
-        this.id = id;
         List<Integer> costListArray = new ArrayList(Arrays.asList(costList));
         List<Integer> rentListArray = new ArrayList(Arrays.asList(rentList));
 
-        new BrokerPlace(id,name,place,owner,value,rentListArray,costListArray,anzahlHaeuser,visit,hypoCredit);
+        return new BrokerPlace(id,name,place,owner,value,rentListArray,costListArray,anzahlHaeuser,visit,hypoCredit);
     }
-    public BrokerPlace(String id, String name, String place, String owner, int value, List<Integer> rentListe,
+    private BrokerPlace(String id, String name, String place, String owner, int value, List<Integer> rentListe,
                        List<Integer> costList, int anzahlHaeuser, String visit, String hypoCredit) {
+
+
         this.id = id;
         this.name = name;
         this.place = place;
@@ -44,6 +45,10 @@ public class BrokerPlace {
         this.anzahlHaeuser = anzahlHaeuser;
         this.visit = visit;
         this.hypoCredit = hypoCredit;
+    }
+
+    void updateBrokerplaceID(String id){
+        this.id = id;
     }
 
     public void setOwner(String owner) {
@@ -104,5 +109,22 @@ public class BrokerPlace {
 
     public boolean hasOwner() {
         return this.owner != null && !this.owner.isEmpty();
+    }
+
+    @Override
+    public String toString() {
+        return "BrokerPlace{" +
+                "id='" + id + '\'' +
+                ", name='" + name + '\'' +
+                ", place='" + place + '\'' +
+                ", owner='" + owner + '\'' +
+                ", value=" + value +
+                ", rentListe=" + rentListe +
+                ", costList=" + costList +
+                ", anzahlHaeuser=" + anzahlHaeuser +
+                ", visit='" + visit + '\'' +
+                ", hypoCredit='" + hypoCredit + '\'' +
+                ", hypo=" + hypo +
+                '}';
     }
 }
