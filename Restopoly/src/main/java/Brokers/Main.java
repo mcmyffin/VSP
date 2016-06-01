@@ -158,7 +158,7 @@ public class Main extends MainAbstract{
             res.status(200);
 
             String gameID = "/broker/"+req.params(":gameID");
-            String placeID = gameID+"/places"+req.params(":placeID");
+            String placeID = gameID+"/places/"+req.params(":placeID");
 
             String jsonOwnerString = brokerManager.setOwnerByGameID(gameID,placeID,req.body());
             res.header("Location",URL+placeID+"/owner");
@@ -173,7 +173,7 @@ public class Main extends MainAbstract{
             res.header("Content-Type","application/json");
 
             String gameID = "/broker/"+req.params(":gameID");
-            String placeID = gameID+"/places"+req.params(":placeID");
+            String placeID = gameID+"/places/"+req.params(":placeID");
 
             String jsonOwnerString = brokerManager.updateHypothecaryByGameID(gameID,placeID,req.body());
             res.header("Location",URL+placeID+"/owner");
@@ -186,7 +186,7 @@ public class Main extends MainAbstract{
             //siehe oben
             res.status(200);
             String gameID = "/broker/"+req.params(":gameID");
-            String placeID = gameID+"/places"+req.params(":placeID");
+            String placeID = gameID+"/places/"+req.params(":placeID");
 
             brokerManager.removeHypothecaryByGameID(gameID,placeID);
             return "OK";
