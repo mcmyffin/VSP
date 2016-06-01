@@ -11,4 +11,8 @@ public class ServiceNotAvaibleException extends Exception {
     public ServiceNotAvaibleException(String message) {
         super(message);
     }
+
+    public ServiceNotAvaibleException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }

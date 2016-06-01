@@ -11,4 +11,8 @@ public class WrongFormatException extends Exception {
     public WrongFormatException(String message) {
         super(message);
     }
+
+    public WrongFormatException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }
