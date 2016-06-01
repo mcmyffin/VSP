@@ -118,9 +118,16 @@ public class Game {
         }
     }
 
-    public synchronized Player getPlayerHoldingMutex() throws PlayerNotFoundException {
+    public synchronized Player getPlayerHoldingMutex() {
         String playerID = mutex.getPlayerID();
-        return playerManager.getPlayerById(playerID);
+
+        try {
+            // wenn ein mutex gehalten wird
+            return playerManager.getPlayerById(playerID);
+        } catch (PlayerNotFoundException e) {
+            // wenn kein mutex gehalten wird
+            return new Player("","","","",false);
+        }
     }
 
     public synchronized boolean isMutexReleased(){
