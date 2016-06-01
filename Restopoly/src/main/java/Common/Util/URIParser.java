@@ -48,6 +48,6 @@ public class URIParser {
         // host
         String hostURI = scheme+"://"+host+":"+port;
 
-        return new URIObject(id,host,uri);
+        return new URIObject(id,hostURI,uri);
     }
 }
