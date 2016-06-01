@@ -67,6 +67,7 @@ public class Main extends MainAbstract{
          */
         get("/games/:gameID", (req,res) -> {
             res.status(200);
+            res.header("Content-Type","application/json");
             String gameID = req.params(":gameID");
             gameID = "/games/"+gameID;
 
@@ -80,7 +81,7 @@ public class Main extends MainAbstract{
          */
         get("/games/:gameID/status", (req,res) -> {
             res.status(200); // if found
-
+            res.header("Content-Type","application/json");
             String gameID = req.params(":gameID");
             gameID = "/games/"+gameID;
 
