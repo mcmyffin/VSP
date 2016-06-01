@@ -15,37 +15,28 @@ public class BrokerPlace {
     private String place;
     private String owner;
     private int value;
-    private List<Integer> rentListe;
-    private List<Integer> costList;
-    private int anzahlHaeuser;
+    private int[]rentListe;
+    private int[]costList;
+    private int houses;
     private String visit;
     private String hypoCredit;
 
     private int hypo = 0;
 
-    public static BrokerPlace createBrokerplace(String id, String name, String place, String owner, int value, int[] rentList,
-                       int[]  costList, int anzahlHaeuser, String visit, String hypoCredit) {
-        List<Integer> costListArray = new ArrayList(Arrays.asList(costList));
-        List<Integer> rentListArray = new ArrayList(Arrays.asList(rentList));
-
-        return new BrokerPlace(id,name,place,owner,value,rentListArray,costListArray,anzahlHaeuser,visit,hypoCredit);
-    }
-    private BrokerPlace(String id, String name, String place, String owner, int value, List<Integer> rentListe,
-                       List<Integer> costList, int anzahlHaeuser, String visit, String hypoCredit) {
-
-
+    public BrokerPlace(String id, String name, String place, String owner, int value,
+                       int[] rentListe, int[] costList, int houses, String visit, String hypoCredit) {
         this.id = id;
         this.name = name;
         this.place = place;
         this.owner = owner;
         this.value = value;
         this.rentListe = rentListe;
-
         this.costList = costList;
-        this.anzahlHaeuser = anzahlHaeuser;
+        this.houses = houses;
         this.visit = visit;
         this.hypoCredit = hypoCredit;
     }
+
 
     void updateBrokerplaceID(String id){
         this.id = id;
@@ -65,11 +56,11 @@ public class BrokerPlace {
 
     public int getValue() {return value;}
 
-    public List<Integer> getRentListe() {return rentListe;}
+    public int[] getRentListe() {return rentListe;}
 
-    public List<Integer> getCostList() {return costList;}
+    public int[] getCostList() {return costList;}
 
-    public int getHouses() {return anzahlHaeuser;}
+    public int getHouses() {return houses;}
 
     public String getVisit() {return visit;}
 
@@ -84,7 +75,7 @@ public class BrokerPlace {
                 value,
                 rentListe,
                 costList,
-                anzahlHaeuser,
+                houses,
                 visit,
                 hypoCredit
                 );
@@ -121,7 +112,7 @@ public class BrokerPlace {
                 ", value=" + value +
                 ", rentListe=" + rentListe +
                 ", costList=" + costList +
-                ", anzahlHaeuser=" + anzahlHaeuser +
+                ", houses=" + houses +
                 ", visit='" + visit + '\'' +
                 ", hypoCredit='" + hypoCredit + '\'' +
                 ", hypo=" + hypo +

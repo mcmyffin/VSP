@@ -1,7 +1,5 @@
 package Brokers.BrokerManagerComponent.DTOs;
 
-import java.util.List;
-
 /**
  * Created by sasa on 13.05.16.
  */
@@ -11,15 +9,15 @@ public class BrokerPlaceDTO {
     private String place;
     private String owner;
     private int value;
-    private List<Integer> rentListe;
-    private List<Integer> costList;
-    private int anzahlHaeuser;
+    private int[] rentListe;
+    private int[] costList;
+    private int houses;
     private String visit;
     private String hypoCredit;
 
 
-    public BrokerPlaceDTO(String id, String name, String place, String owner, int value, List<Integer> rentListe,
-                          List<Integer> costList, int anzahlHaeuser, String visit, String hypoCredit) {
+    public BrokerPlaceDTO(String id, String name, String place, String owner, int value, int[] rentListe,
+                          int[] costList, int houses, String visit, String hypoCredit) {
         this.id = id;
         this.name = name;
         this.place = place;
@@ -27,7 +25,7 @@ public class BrokerPlaceDTO {
         this.value = value;
         this.rentListe = rentListe;
         this.costList = costList;
-        this.anzahlHaeuser = anzahlHaeuser;
+        this.houses = houses;
         this.visit = visit;
         this.hypoCredit = hypoCredit;
     }
@@ -68,28 +66,28 @@ public class BrokerPlaceDTO {
         this.value = value;
     }
 
-    public List<Integer> getRentListe() {
+    public int[] getRentListe() {
         return rentListe;
     }
 
-    public void setRentListe(List<Integer> rentListe) {
+    public void setRentListe(int[] rentListe) {
         this.rentListe = rentListe;
     }
 
-    public List<Integer> getCostList() {
+    public int[] getCostList() {
         return costList;
     }
 
-    public void setCostList(List<Integer> costList) {
+    public void setCostList(int[] costList) {
         this.costList = costList;
     }
 
     public int getHousest() {
-        return anzahlHaeuser;
+        return houses;
     }
 
-    public void setHouses(int anzahlHaeuser) {
-        this.anzahlHaeuser = anzahlHaeuser;
+    public void setHouses(int houses) {
+        this.houses = houses;
     }
 
     public String getVisit() {

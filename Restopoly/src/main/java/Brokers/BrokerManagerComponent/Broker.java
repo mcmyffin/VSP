@@ -113,7 +113,7 @@ public class Broker {
         String visit = this.id+"/places/visit";
         String hypocredit = this.id+"places/hypothecarycredit";
 
-        BrokerPlace brokerPlace = BrokerPlace.createBrokerplace(placeID,name,place, owner,value,rent, cost, houses, visit, hypocredit);
+        BrokerPlace brokerPlace = new BrokerPlace(placeID,name,place, owner,value,rent, cost, houses, visit, hypocredit);
         placesMap.put(placeID,brokerPlace);
     }
 
@@ -185,22 +185,24 @@ public class Broker {
     }
 
     public int getVisitCost(BrokerPlace brokerPlace) {
-        return brokerPlace.getRentListe().get(brokerPlace.getHouses());
+        int[] rentlist = brokerPlace.getRentListe();
+        return rentlist[brokerPlace.getHouses()];
     }
 
     public int getNextCostOfPlace(BrokerPlace brokerPlace) throws BrokerMaxAmountHousesRichedException {
 
-        List<Integer> costList = brokerPlace.getCostList();
 
-        if(brokerPlace.getCostList().size() <= brokerPlace.getHouses()) throw new BrokerMaxAmountHousesRichedException();
+        int[] costList = brokerPlace.getCostList();
 
-        return costList.get(brokerPlace.getHouses());
+        if(brokerPlace.getCostList().length <= brokerPlace.getHouses()) throw new BrokerMaxAmountHousesRichedException();
+
+        return costList[brokerPlace.getHouses()];
     }
 
     public int getCurrentCostOfPlace(BrokerPlace brokerPlace){
-        List<Integer> costList = brokerPlace.getCostList();
+        int [] costList = brokerPlace.getCostList();
 
         int houses = brokerPlace.getHouses();
-        return costList.get(houses == 0 ? 0 : houses - 1);
+        return costList[houses == 0 ? 0 : houses - 1];
     }
 }
