@@ -1,6 +1,8 @@
 package Boards.BoardManagerComponent;
 
 import Boards.BoardManagerComponent.DTOs.*;
+import Boards.Main;
+import Brokers.BrokerManagerComponent.DTOs.BrokerPlaceDTO;
 import Common.Exceptions.*;
 import Common.Util.IPFinder;
 import Common.Util.URIObject;
@@ -129,46 +131,52 @@ public class Board {
     private List<String> getEstatesIDList() throws UnirestException {
 
         List<String> brokerPlacesURIList = new ArrayList<>();
-        String brokerURI = getGamesServices().getBroker();
+        String brokerURI = getGamesComponents().getBroker();
 
         if (brokerURI == null || brokerURI.isEmpty()) throw new UnirestException("Broker URI not valid: "+brokerURI);
 
         HttpResponse<JsonNode> brokerResponse = Unirest.get(brokerURI + "/places").asJson();
         if (brokerResponse.getStatus() == 200) {
 
-            JSONArray jsonArray = brokerResponse.getBody().getObject().getJSONArray("estates");
+            JSONArray jsonArray = brokerResponse.getBody().getArray();
             for (Object o : jsonArray) brokerPlacesURIList.add(o.toString());
 
         }
         return brokerPlacesURIList;
     }
 
-    private synchronized void createAndRegisterPlacesFromBroker() throws UnirestException {
+    private synchronized void createAndRegisterPlacesFromBroker() throws UnirestException, URISyntaxException {
 
         List<String> estatesIdList = getEstatesIDList();
 
         List<String> brokerPlacesURIList = new ArrayList<>();
-        String brokerURI = getGamesServices().getBroker();
+        URIObject uriObject = URIParser.createURIObject(getGamesComponents().getBroker());
+        String brokerURI = uriObject.getHost();
 
         for(String estateID : estatesIdList){
 
             String estateURI = brokerURI+estateID;
-            HttpResponse<JsonNode> response = Unirest.get(estateURI).asJson();
+            HttpResponse<String> response = Unirest.get(estateURI).asString();
 
-            JSONObject jsonObject = response.getBody().getObject();
+            if(response.getStatus() != 200){
+                throw new UnirestException("Broker: get("+estateURI+") -> statuscode != 200\n" +
+                                            "Statuscode: "+response.getStatus()+"\n" +
+                                            "Body: "+response.getBody().toString());
+            }
+
+            JSONObject jsonObject = new JSONObject(response.getBody());
 
             String name     = jsonObject.getString("name");
             String broker   = estateURI;
 
             String[] placeIDs = createPlace(1,name,broker);
-            String placeURI = IPFinder.getIP()+placeIDs[0];
+            String placeURI = Main.URL+placeIDs[0];
 
             registerPlace(estateURI,placeURI); // registriere den Place beim Broker (per PUT)
-
         }
     }
 
-    public void initialize() throws UnirestException {
+    public void initialize() throws UnirestException, URISyntaxException {
 
         // create non estates
 
