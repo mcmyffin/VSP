@@ -3,6 +3,7 @@ package Boards.BoardManagerComponent.Util;
 import Boards.BoardManagerComponent.Board;
 import com.mashape.unirest.http.exceptions.UnirestException;
 
+import java.net.URISyntaxException;
 import java.util.LinkedList;
 import java.util.Queue;
 
@@ -39,7 +40,7 @@ public class InitializeService {
 
                 }catch (InterruptedException ex){
 
-                }catch (UnirestException ex){
+                }catch (UnirestException|URISyntaxException ex){
                     System.out.println("Board initialize FAILED");
                     ex.printStackTrace();
                 }
