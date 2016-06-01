@@ -155,6 +155,7 @@ public class Main extends MainAbstract{
          * creates a new bank transfer from the bank itself
          */
         post("/banks/:bankID/transfer/to/:toID/:amount", (req, res) -> {
+            res.status(201);
             checkContentTypeJson(req);
             setResponseContentTypeJson(res);
 
