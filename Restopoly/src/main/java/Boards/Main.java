@@ -321,7 +321,13 @@ public class Main extends MainAbstract{
         });
 
         exception(ServiceNotAvaibleException.class, (ex, req, res) -> {
-            res.status(500);// not found
+            res.status(500);// Internal Error
+            res.body(ex.getMessage());
+            ex.printStackTrace();
+        });
+
+        exception(MutexNotReleasedException.class, (ex, req, res) -> {
+            res.status(409);// conflict
             res.body(ex.getMessage());
             ex.printStackTrace();
         });
