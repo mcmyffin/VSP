@@ -175,7 +175,7 @@ public class Main extends MainAbstract{
             String gameID = "/broker/"+req.params(":gameID");
             String placeID = gameID+"/places/"+req.params(":placeID");
 
-            String jsonOwnerString = brokerManager.updateHypothecaryByGameID(gameID,placeID,req.body());
+            String jsonOwnerString = brokerManager.updateHypothecaryByGameID(gameID,placeID);
             res.header("Location",URL+placeID+"/owner");
             return jsonOwnerString;
 

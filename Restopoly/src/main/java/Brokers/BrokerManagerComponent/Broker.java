@@ -3,7 +3,12 @@ package Brokers.BrokerManagerComponent;
 import Brokers.BrokerManagerComponent.DTOs.BrokerDTO;
 import Common.Exceptions.BrokerMaxAmountHousesRichedException;
 import Common.Exceptions.PlaceNotFoundException;
+import Common.Exceptions.ServiceNotAvaibleException;
 import Common.Util.*;
+import Games.GameManagerComponent.DTO.ComponentsDTO;
+import com.google.gson.Gson;
+import com.mashape.unirest.http.HttpResponse;
+import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
 
 import java.net.URI;
@@ -18,15 +23,17 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class Broker {
 
     private final String id;
-    private URIObject gamesURIObject;
+    private URIObject gameURIObject;
     private String estates;
+    private Gson gson;
     private Map<String, BrokerPlace> placesMap;
 
     public Broker(String game, String estates) throws URISyntaxException {
 
+        gson = new Gson();
         placesMap = new HashMap();
-        gamesURIObject = URIParser.createURIObject(game);
-        id = "/broker" + gamesURIObject.getId();
+        gameURIObject = URIParser.createURIObject(game);
+        id = "/broker" + gameURIObject.getId();
 
         this.estates = id+"/places";
         initializePlaces();
@@ -60,6 +67,8 @@ public class Broker {
     }
 
     private String getHostFromURI(String uri) throws URISyntaxException {
+        checkNotNull(uri);
+
         URI u = URI.create(uri);
 
         if (u.getScheme() == null || u.getHost() == null) throw new URISyntaxException(uri, "URI is not absolute");
@@ -71,10 +80,12 @@ public class Broker {
     }
 
     public String getGameURI(){
-        return gamesURIObject.getAbsoluteURI();
+        return gameURIObject.getAbsoluteURI();
     }
 
     private String getGameIDFromURI(String uri) throws URISyntaxException {
+        checkNotNull(uri);
+
         URI u = new URI(uri);
         if (u.getScheme() == null || u.getHost() == null) throw new URISyntaxException(uri, "URI is not absolute");
 
@@ -104,6 +115,9 @@ public class Broker {
     }
 
     private void createBrokerplace(String name, int[] cost, int[] rent) {
+        checkNotNull(name);
+        checkNotNull(cost);
+        checkNotNull(rent);
 
         String placeID = getNextBrokerplaceID();
         String place = "";
@@ -167,7 +181,7 @@ public class Broker {
     }
 
     public String getGameService() {
-        return gamesURIObject.getHost();
+        return gameURIObject.getHost();
     }
 
     public BrokerDTO toDTO() {
@@ -180,6 +194,8 @@ public class Broker {
     }
 
     public BrokerPlace getBrokerPlaceByID(String placeID) throws PlaceNotFoundException {
+        checkNotNull(placeID);
+
         if(!placesMap.containsKey(placeID)) throw new PlaceNotFoundException();
         return placesMap.get(placeID);
     }
@@ -187,6 +203,26 @@ public class Broker {
     public int getVisitCost(BrokerPlace brokerPlace) {
         int[] rentlist = brokerPlace.getRentListe();
         return rentlist[brokerPlace.getHouses()];
+    }
+
+    public ComponentsDTO getGameComponents() throws ServiceNotAvaibleException {
+        String gameURI = getGameURIObject().getAbsoluteURI();
+        try{
+            // get game Components
+            HttpResponse<String> gameResponse = Unirest.get(gameURI+"/components").asString();
+            if(gameResponse.getStatus() != 200){
+                throw new ServiceNotAvaibleException("Game Service unerwarteter Response-Code\n" +
+                        "get("+gameURI+"/components"+")\n"+
+                        "status: "+gameResponse.getStatus()+"\n" +
+                        "body: "+gameResponse.getBody());
+            }else{
+                ComponentsDTO componentsDTO =  gson.fromJson(gameResponse.getBody(),ComponentsDTO.class);
+                return componentsDTO;
+            }
+
+        }catch (UnirestException ex){
+            throw new ServiceNotAvaibleException("Game Service nicht erreichbar",ex);
+        }
     }
 
     public int getNextCostOfPlace(BrokerPlace brokerPlace) throws BrokerMaxAmountHousesRichedException {
@@ -204,5 +240,9 @@ public class Broker {
 
         int houses = brokerPlace.getHouses();
         return costList[houses == 0 ? 0 : houses - 1];
+    }
+
+    public URIObject getGameURIObject() {
+        return gameURIObject;
     }
 }

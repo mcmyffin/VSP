@@ -90,6 +90,20 @@ public class EventDTO {
         checkNotNull(id);
         this.id = id;
     }
+
+    @Override
+    public String toString() {
+        return "EventDTO{" +
+                "id='" + id + '\'' +
+                ", game='" + game + '\'' +
+                ", type='" + type + '\'' +
+                ", name='" + name + '\'' +
+                ", reason='" + reason + '\'' +
+                ", resource='" + resource + '\'' +
+                ", player='" + player + '\'' +
+                ", time='" + time + '\'' +
+                '}';
+    }
 }
 
 

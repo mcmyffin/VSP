@@ -13,6 +13,7 @@ import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.JsonNode;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.net.URISyntaxException;
@@ -131,7 +132,7 @@ public class BrokerManager {
     }
 
     public String updateOwnerByGameID(String gameID, String placeID, String body)
-            throws BrokerNotFoundException, PlaceNotFoundException, BrokerOwnerAlreadyExistsException, UnirestException, BrokerMaxAmountHousesRichedException, TransactionFailedException, BrokerPlaceWithoutOwnerException {
+            throws Exception {
 
         checkNotNull(gameID);
         checkNotNull(placeID);
@@ -162,7 +163,7 @@ public class BrokerManager {
 
         //URl: /banks/{bankid}/transfer/to/{to}/{amount}
         HttpResponse<JsonNode> httpOldBankResponse = Unirest
-                .post(bank+"/transfer/to/"+oldPlayerOwnerBankID+"/"+amount)
+                .post(bank+"/transfer/to"+oldPlayerOwnerBankID+"/"+amount)
                 .header("Content-Type","application/json")
                 .body("User get Money for changing estate")
                 .asJson();
@@ -173,7 +174,7 @@ public class BrokerManager {
         //bank URI aufruf zum ausführen von das Transaktion
         //URl: /banks/{bankid}/transfer/from/{from}/{amo unt}
         HttpResponse<JsonNode> httpNewBankResponse = Unirest
-                .post(bank+"/transfer/from/"+playerOwnerBankID+"/"+amount)
+                .post(bank+"/transfer/from"+playerOwnerBankID+"/"+amount)
                 .header("Content-Type","application/json")
                 .body("User pay Money for changing estate")
                 .asJson();
@@ -201,25 +202,25 @@ public class BrokerManager {
         String event = componentsDTO.getEvent();
 
         // erstelle Event , weil Owner neu gestzt
-        EventDTO eventOwnerGesetzt = creatEvent(event,
-                broker.getGameService(),
+        EventDTO eventOwnerGesetzt = createEvent(
+                broker,
+                brokerPlace.getOwner(),
                 "estate tranfer",
                 "User chang estate",
                 "User wants to change estate",
-                Main.URL+brokerPlace.getId(),
-                brokerPlace.getOwner(),
-                System.currentTimeMillis()+""
+                Main.URL+brokerPlace.getId()
         );
 
         //erstelle event, weil alte owner geloescht
-        EventDTO eventOwnerGeloescht = creatEvent(event,
-                broker.getGameService(),
+//        String eventManagerURI, String game, String type, String name, String reason, String resource, String player
+//        Broker broker, String player,String type, String name, String reason, String resource
+        EventDTO eventOwnerGeloescht = createEvent(
+                broker,
+                brokerPlace.getOwner(),
                 "estate tranfer",
                 "User chang estate",
                 "User wants to change estate",
-                Main.URL+brokerPlace.getId(),
-                brokerPlace.getOwner(),
-                System.currentTimeMillis()+""
+                Main.URL+brokerPlace.getId()
         );
 
         //add event in der eventliste
@@ -232,7 +233,7 @@ public class BrokerManager {
     }
 
     public String setOwnerByGameID(String gameID, String placeID, String body)
-            throws BrokerNotFoundException, PlaceNotFoundException, UnirestException, TransactionFailedException, BrokerOwnerAlreadyExistsException, BrokerMaxAmountHousesRichedException {
+            throws Exception {
 
         checkNotNull(gameID);
         checkNotNull(placeID);
@@ -261,10 +262,11 @@ public class BrokerManager {
         //bank URI aufruf zum ausführen von das Transaktion
         //URl: /banks/{bankid}/transfer/from/{from}/{amo unt}
         HttpResponse<JsonNode> httpBankResponse = Unirest
-                .post(bank+"/transfer/from/"+playerOwnerBankID+"/"+amount)
+                .post(bank+"/transfer/from"+playerOwnerBankID+"/"+amount)
                 .header("Content-Type","application/json")
                 .body("User buy estate")
                 .asJson();
+        System.out.println("Unirest.post:--> "+bank+"/transfer/from"+playerOwnerBankID+"/"+amount);
 
         //wenn statuscode nicht stimmt, springe raus
         if(httpBankResponse.getStatus() != 201) throw new TransactionFailedException();
@@ -273,50 +275,133 @@ public class BrokerManager {
         for(Object o : httpBankResponse.getBody().getArray()){
             EventDTO eventDTO = gson.fromJson(o.toString(),EventDTO.class);
             eventList.add(eventDTO);
+            System.out.println(o.toString());
         }
+        System.out.println("eventliste1: "+eventList.toString());
 
         //neue Owner setzen
         brokerPlace.setOwner(playerOwnerUri);
 
 
         //URI von events
-        String event = componentsDTO.getEvent();
+        String eventURI = componentsDTO.getEvent();
 
         // erstelle Event , weil Owner neu gestzt
-        EventDTO eventOwnerGesetzt = creatEvent(event,
-                                                broker.getGameService(),
+        EventDTO eventOwnerGesetzt = createEvent(broker,
+                                                brokerPlace.getOwner(),
                                                 "estate tranfer",
                                                 "User set estate owner",
                                                 "User wants to buy estate owner",
-                                                Main.URL+brokerPlace.getId(),
-                                                brokerPlace.getOwner(),
-                                                System.currentTimeMillis()+""
+                                                Main.URL+brokerPlace.getId()
                                                  );
+
 
         //add event in der eventliste
         eventList.add(eventOwnerGesetzt);
 
+        System.out.println("eventliste2: "+eventList.toString());
+
         return gson.toJson(eventList);
     }
 
-    private EventDTO creatEvent(String eventManagerURI, String game, String type,
-                                String name, String reason, String resource, String player, String time) {
+//    String eventManagerURI, String game, String type,
+//                                String name, String reason, String resource, String player
 
-        EventDTO eventOwnerGesetzt = new EventDTO(game, type, name, reason, resource, player, time );
-        Unirest.post(eventManagerURI).header("Content-Type", "application/json").body(eventOwnerGesetzt);
-        return eventOwnerGesetzt;
+    private EventDTO createEvent(Broker broker, String player,String type, String name, String reason, String resource) throws ServiceNotAvaibleException, WrongFormatException {
+        String game = broker.getGameURIObject().getAbsoluteURI();
+        String time = Long.toString(System.currentTimeMillis());
+
+        EventDTO eventPostDTO = new EventDTO(
+
+                game,
+                type,
+                name,
+                reason,
+                resource,
+                player,
+                time
+        );
+
+        String eventJsonString = gson.toJson(eventPostDTO);
+        try{
+            ComponentsDTO componentsDTO = broker.getGameComponents();
+            String eventManagerURI = componentsDTO.getEvent();
+
+            HttpResponse<String> eventPostResponse = Unirest
+                    .post(eventManagerURI)
+                    .header("Content-Type","application/json")
+                    .body(eventJsonString).asString();
+
+            if(eventPostResponse.getStatus() != 201){
+                throw new ServiceNotAvaibleException("Event Service POST -  Wrong response code\n" +
+                        "post("+eventManagerURI+")\n" +
+                        "req_header(\"Content-Type\":\"application/json\")\n" +
+                        "req_body: "+eventJsonString+"\n"+
+                        "res_status: "+eventPostResponse.getStatus()+"\n" +
+                        "res_body: "+eventPostResponse.getBody());
+            }
+
+            // get response Locationheader
+            String eventResponseLocationURI =  eventPostResponse.getHeaders().getFirst("Location");
+
+            HttpResponse<String> eventGetResponse = Unirest.get(eventResponseLocationURI).asString();
+            if(eventGetResponse.getStatus() != 200){
+                throw new ServiceNotAvaibleException("Event Service GET - Wrong response code\n" +
+                        "get("+eventResponseLocationURI+")\n" +
+                        "status: "+eventGetResponse.getStatus()+"\n" +
+                        "body: "+eventGetResponse.getBody());
+            }
+
+            EventDTO eventGetDTO = gson.fromJson(eventGetResponse.getBody(),EventDTO.class);
+            return eventGetDTO;
+
+        }catch (UnirestException ex){
+            throw new ServiceNotAvaibleException("Event Service unerreichbar",ex);
+        }catch (JsonSyntaxException ex){
+            throw new WrongFormatException("Json Syntax wrong format",ex);
+        }
     }
 
-    private ComponentsDTO getComponentsDTO(Broker broker) throws UnirestException {
-        String gameURI = broker.getGameService();
-        HttpResponse<String> httpGameRes = Unirest.get(gameURI+"/components").asString();
-        String gameBody = httpGameRes.getBody();
-        return gson.fromJson(gameBody, ComponentsDTO.class);
+//    private EventDTO creatEvent(String eventManagerURI, String game, String type,
+//                                String name, String reason, String resource, String player, String time) throws Exception {
+//
+//        EventDTO eventOwnerGesetzt = new EventDTO(game, type, name, reason, resource, player, time );
+//        HttpResponse httpResponse = Unirest.post(eventManagerURI).header("Content-Type", "application/json")
+//                                    .body(gson.toJson(eventOwnerGesetzt))
+//                                    .asString();
+//        if(httpResponse.getStatus() == 201) {
+//            String eventURI = httpResponse.getHeaders().getFirst("Location");
+//            HttpResponse<String> httpResponseEventURI = Unirest.get(eventURI).asString();
+//            if(httpResponseEventURI.getStatus() != 200) throw new Exception("probleme bei Creat Event");
+//            EventDTO newEventOwner = gson.fromJson(httpResponseEventURI.getBody(), EventDTO.class);
+//            System.out.println("new event owner: "+newEventOwner.toString());
+//            return newEventOwner;
+//        }
+//        throw new BrokerCeateEventNotWorkException();
+//    }
 
+    private ComponentsDTO getComponentsDTO(Broker broker) throws UnirestException {
+        String gameURI = broker.getGameURIObject().getAbsoluteURI();
+        HttpResponse<String> httpGameRes = Unirest.get(gameURI+"/components").asString();
+        System.out.println("getComponentsDTO(): "+gameURI+"/components");
+        if(httpGameRes.getStatus() != 200) try {
+            throw new Exception();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        String gameBody = httpGameRes.getBody();
+        System.out.println("gameBody bei getComponentsDTO: "+gameBody);
+        return gson.fromJson(gameBody, ComponentsDTO.class);
     }
 
     private String getPlayerAccountsID(String playerOwnerUri) throws UnirestException {
+        System.out.println("getPlayerACCID: "+ playerOwnerUri);
         HttpResponse<String> httpPlayerOwnerResponse = Unirest.get(playerOwnerUri).asString();
+        System.out.println("Header: "+httpPlayerOwnerResponse.getHeaders());
+        System.out.println("Status: "+httpPlayerOwnerResponse.getStatus());
+        System.out.println("Body: "+httpPlayerOwnerResponse.getBody());
+
+//        if(httpPlayerOwnerResponse.getStatus() == 201)
         String playerOwnerBody = httpPlayerOwnerResponse.getBody();
         PlayerDTO playerOwnerDTO = gson.fromJson(playerOwnerBody, PlayerDTO.class);
         String playerOwnerBankAcc = playerOwnerDTO.getAccount();
@@ -327,12 +412,10 @@ public class BrokerManager {
         return playerOwnerBankID;
     }
 
-    public String updateHypothecaryByGameID(String gameID, String placeID, String body)
-            throws BrokerNotFoundException, PlaceNotFoundException, BrokerMaxAmountHousesRichedException,
-            BrokerPlaceWithoutOwnerException, UnirestException, TransactionFailedException {
+    public String updateHypothecaryByGameID(String gameID, String placeID)
+            throws Exception {
         checkNotNull(gameID);
         checkNotNull(placeID);
-        checkNotNull(body);
 
         Broker broker = getBrokerObjectByID(gameID);
         BrokerPlace brokerPlace = broker.getBrokerPlaceByID(placeID);
@@ -345,7 +428,7 @@ public class BrokerManager {
         if(!brokerPlace.hasOwner()) throw new BrokerPlaceWithoutOwnerException();
 
         // transaktion von Bank an Spieler
-        HttpResponse<JsonNode> bankResponse = Unirest.post(componentsDTO.getBank()+"/transfer/to/"+playerBankAccID+"/"+broker.getCurrentCostOfPlace(brokerPlace))
+        HttpResponse<JsonNode> bankResponse = Unirest.post(componentsDTO.getBank()+"/transfer/to"+playerBankAccID+"/"+broker.getCurrentCostOfPlace(brokerPlace))
                 .header("Content-Type","application/json")
                 .body("Bank get money an User")
                 .asJson();
@@ -362,14 +445,13 @@ public class BrokerManager {
         int costOfPlace = broker.getNextCostOfPlace(brokerPlace);
         brokerPlace.setHypo(costOfPlace);
 
-        EventDTO eventUpdateHypothec = creatEvent(componentsDTO.getEvent(),
-                broker.getGameService(),
+        EventDTO eventUpdateHypothec = createEvent(
+                broker,
+                brokerPlace.getOwner(),
                 "get hypothecary",
                 "update hypothecary",
                 "Bank wants to get hypothecary",
-                brokerPlace.getHypoCredit(),
-                brokerPlace.getOwner(),
-                System.currentTimeMillis()+""
+                brokerPlace.getHypoCredit()
         );
 
         eventList.add(eventUpdateHypothec);
@@ -378,7 +460,7 @@ public class BrokerManager {
     }
 
     public void removeHypothecaryByGameID(String gameID, String placeID)
-            throws BrokerNotFoundException, PlaceNotFoundException, UnirestException, TransactionFailedException {
+            throws Exception {
         checkNotNull(gameID);
         checkNotNull(placeID);
 
@@ -394,7 +476,7 @@ public class BrokerManager {
 
         int amount = brokerPlace.getHypothec();
 
-        HttpResponse<JsonNode> bankResponse = Unirest.post(bankURI+"/transfer/from/"+ownerBankAccID+"/"+amount)
+        HttpResponse<JsonNode> bankResponse = Unirest.post(bankURI+"/transfer/from"+ownerBankAccID+"/"+amount)
                                                 .header("Content-Type","application/json")
                                                 .body("User pay for Hypothecary")
                                                 .asJson();
@@ -407,14 +489,12 @@ public class BrokerManager {
             eventList.add(e);
         }
 
-        EventDTO eventRemoveHypothec = creatEvent(componentsDTO.getEvent(),
-                                                    broker.getGameService(),
+        EventDTO eventRemoveHypothec = createEvent( broker,
+                                                    brokerPlace.getOwner(),
                                                     "pay hypothecary",
                                                     "pay/remove hypothecary",
                                                     "User wants to pay hypothecary from estate",
-                                                    brokerPlace.getHypoCredit(),
-                                                    brokerPlace.getOwner(),
-                                                    System.currentTimeMillis()+""
+                                                    brokerPlace.getHypoCredit()
                                                 );
 
         brokerPlace.setHypo(0);
@@ -452,7 +532,7 @@ public class BrokerManager {
 
         //bank URI aufruf zum ausführen von das Transaktion
         HttpResponse<String> httpBankResponse = Unirest.
-                post(bank+"/transfer/from/"+visitorBankAccID+"/to/"+ownerBankAccID+"/"+visitCost)
+                post(bank+"/transfer/from"+visitorBankAccID+"/to"+ownerBankAccID+"/"+visitCost)
                 .header("Content-Type","application/json")
                 .body("User pay for visiting estate")
                 .asString();
