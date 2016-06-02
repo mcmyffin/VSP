@@ -205,12 +205,8 @@ public class BankManager {
         // add Event to List
         eventList.add(event);
 
-        // convert to JsonString
-        JSONObject jsonObject = new JSONObject();
-        jsonObject.put("events",gson.toJson(eventList));
-
         // create Pair<transferID,EventJsonArrayString>
-        return new Pair<String,String>(transferID,jsonObject.toString());
+        return new Pair<String,String>(transferID,gson.toJson(eventList));
     }
 
     public Pair<String,String> createTransferFromTo(String bankID, String fromAccount, String toAccount, int amount, String reason)
@@ -237,12 +233,8 @@ public class BankManager {
         // add Event to List
         eventList.add(event);
 
-        // convert to JsonString
-        JSONObject jsonObject = new JSONObject();
-        jsonObject.put("events",gson.toJson(eventList));
-
         // create Pair<transferID,EventJsonArrayString>
-        return new Pair<String,String>(transferID,jsonObject.toString());
+        return new Pair<String,String>(transferID,gson.toJson(eventList));
     }
 
     public Pair<String,String> createTransferTo(String bankID, String toAccount, int amount, String reason, String transactionID) throws ServiceNotAvaibleException, WrongFormatException, BankNotFoundException, IllegalTransactionStateException, AccountNotFoundException, TransferFailedException, TransactionNotFoundException {
@@ -299,12 +291,8 @@ public class BankManager {
         // add Event to List
         eventList.add(event);
 
-        // convert to JsonString
-        JSONObject jsonObject = new JSONObject();
-        jsonObject.put("events",gson.toJson(eventList));
-
         // create Pair<transferID,EventJsonArrayString>
-        return new Pair<String,String>(transferID,jsonObject.toString());
+        return new Pair<String,String>(transferID,gson.toJson(eventList));
     }
 
     public Pair<String,String> createTransferFrom(String bankID, String fromAccount, int amount, String reason, String transactionID) throws BankNotFoundException, TransactionNotFoundException, TransferFailedException, AccountNotFoundException, IllegalTransactionStateException, ServiceNotAvaibleException, WrongFormatException {
@@ -330,12 +318,8 @@ public class BankManager {
         // add Event to List
         eventList.add(event);
 
-        // convert to JsonString
-        JSONObject jsonObject = new JSONObject();
-        jsonObject.put("events",gson.toJson(eventList));
-
         // create Pair<transferID,EventJsonArrayString>
-        return new Pair<String,String>(transferID,jsonObject.toString());
+        return new Pair<String,String>(transferID,gson.toJson(eventList));
 
     }
 
@@ -361,12 +345,8 @@ public class BankManager {
         // add Event to List
         eventList.add(event);
 
-        // convert to JsonString
-        JSONObject jsonObject = new JSONObject();
-        jsonObject.put("events",gson.toJson(eventList));
-
         // create Pair<transferID,EventJsonArrayString>
-        return new Pair<String,String>(transferID,jsonObject.toString());
+        return new Pair<String,String>(transferID,gson.toJson(eventList));
     }
 
     public String createTransactionId(String bankID) throws BankNotFoundException {

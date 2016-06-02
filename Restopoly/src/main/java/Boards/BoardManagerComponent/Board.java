@@ -2,9 +2,7 @@ package Boards.BoardManagerComponent;
 
 import Boards.BoardManagerComponent.DTOs.*;
 import Boards.Main;
-import Brokers.BrokerManagerComponent.DTOs.BrokerPlaceDTO;
 import Common.Exceptions.*;
-import Common.Util.IPFinder;
 import Common.Util.URIObject;
 import Common.Util.URIParser;
 import Games.GameManagerComponent.DTO.ComponentsDTO;
@@ -221,7 +219,7 @@ public class Board {
         setPawnTo(pawnID,jailPos);
     }
 
-    public URIObject getGameURI(){ return gameURIObject;}
+    public URIObject getGameURIObject(){ return gameURIObject;}
 
     public String getId() {
         return id;
@@ -315,20 +313,26 @@ public class Board {
         return rollPersistence;
     }
 
-    public synchronized PawnMove pawnRoll(String pawnID, int number) throws PawnNotFoundException {
+    synchronized PawnMove pawnRoll(String pawnID, int number) throws PawnNotFoundException {
         checkNotNull(pawnID);
 
         // get Pawn
         Pawn pawn = getPawnById(pawnID);
+        return pawnRoll(pawn,number);
+    }
 
+    synchronized PawnMove pawnRoll(Pawn pawn, int number){
         // get Field and remove pawn from Field
         int positionBefore = pawn.getPosition();
         Field field = fieldList.get(positionBefore);
-        field.removePawn(pawnID);
+        field.removePawn(pawn.getId());
 
         // get new Position
         int size = fieldList.size();
         int positionAfter = (positionBefore + number) % size;
+
+        // if number is negative
+        positionAfter = (positionAfter < 0 ? size + positionAfter: positionAfter);
 
         // set new Position to Pawn and add Pawn to Field at Position
         pawn.setPosition(positionAfter);
@@ -338,7 +342,7 @@ public class Board {
         PawnMove pawnMove = new PawnMove(
                 pawn,
                 field.getPlace(),
-                positionBefore <= positionAfter
+                positionBefore >= positionAfter && number >= 0
         );
 
         return pawnMove;
@@ -359,7 +363,6 @@ public class Board {
         field.addPawn(pawn);
     }
 
-
     public Collection<String> getPlacesIDList() {
 
         Collection<String> placesIDList = new ArrayList();
@@ -375,5 +378,25 @@ public class Board {
 
         if(!placeMap.containsKey(placeID)) throw new PlaceNotFoundException();
         return placeMap.get(placeID);
+    }
+
+    public ComponentsDTO getGameComponents() throws ServiceNotAvaibleException {
+        String gameURI = getGameURIObject().getAbsoluteURI();
+        try{
+            // get game Components
+            HttpResponse<String> gameResponse = Unirest.get(gameURI+"/components").asString();
+            if(gameResponse.getStatus() != 200){
+                throw new ServiceNotAvaibleException("Game Service unerwarteter Response-Code\n" +
+                        "get("+gameURI+"/components"+")\n"+
+                        "status: "+gameResponse.getStatus()+"\n" +
+                        "body: "+gameResponse.getBody());
+            }else{
+                ComponentsDTO componentsDTO =  gson.fromJson(gameResponse.getBody(),ComponentsDTO.class);
+                return componentsDTO;
+            }
+
+        }catch (UnirestException ex){
+            throw new ServiceNotAvaibleException("Game Service nicht erreichbar",ex);
+        }
     }
 }
