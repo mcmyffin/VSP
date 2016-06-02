@@ -159,7 +159,10 @@ public class Bank {
         Account from = getAccountById(fromAccount);
         Account to   = getAccountById(toAccount);
 
-        if(from.getSaldo() < amount) throw new TransferFailedException("Tranfer faild. Account: "+fromAccount+" insufficient fonds !");
+        if(from.getSaldo() < amount){
+            transaction.checkTransfers();
+            throw new TransferFailedException("Tranfer faild. Account: "+fromAccount+" insufficient fonds !");
+        }
 
         newTransfer.setFrom(from);
         newTransfer.setTo(to);
@@ -169,6 +172,10 @@ public class Bank {
         to.addMoney(amount);
 
         transfersMap.put(transferID,newTransfer);
+
+        // check transfers
+        transaction.checkTransfers();
+
         return transferID;
     }
 

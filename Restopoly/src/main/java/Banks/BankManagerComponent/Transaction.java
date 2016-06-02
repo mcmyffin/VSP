@@ -13,35 +13,35 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class Transaction {
 
     private final String id;
-    private TransferState state;
+    private TransactionState state;
     private List<Transfer> transfersList;
 
     public Transaction(String id) {
         checkNotNull(id);
         this.id = id;
-        this.state = TransferState.READY;
+        this.state = TransactionState.READY;
     }
 
     public synchronized void setTransferAction(String state) throws UndefinedTransactionStateException, IllegalTransactionStateException {
         checkNotNull(state);
 
-        if(this.state.equals(TransferState.COMMITED)) throw new IllegalTransactionStateException("Transaktion state COMMITED");
-        if(this.state.equals(TransferState.ROLLBACK)) throw new IllegalTransactionStateException("Transaktion state ROLLBACK");
+        if(this.state.equals(TransactionState.COMMITED)) throw new IllegalTransactionStateException("Transaktion state COMMITED");
+        if(this.state.equals(TransactionState.ROLLBACK)) throw new IllegalTransactionStateException("Transaktion state ROLLBACK");
 
         try{
             TransferAction transferAction = TransferAction.valueOf(state);
 
             // Transaction wird noch befüllt
-            if(this.state.equals(TransferState.READY)){
+            if(this.state.equals(TransactionState.READY)){
 
                 if(transferAction.equals(TransferAction.RADY)) return; // status bleibt unverändert
-                else if(transferAction.equals(TransferAction.COMMIT)) this.state = TransferState.COMMITED;
+                else if(transferAction.equals(TransferAction.COMMIT)) this.state = TransactionState.COMMITED;
                 else throw new IllegalTransactionStateException();
 
             // Transaction ist beim Commit fehlgeschlagen
-            }else if(this.state.equals(TransferState.FAILED)){
+            }else if(this.state.equals(TransactionState.FAILED)){
                 if(transferAction.equals(TransferAction.ROLLBACK) || transferAction.equals(TransferAction.RADY)){
-                    this.state = TransferState.ROLLBACK;
+                    this.state = TransactionState.ROLLBACK;
                     runRollback();
                 }
             }
@@ -79,7 +79,7 @@ public class Transaction {
         return id;
     }
 
-    public TransferState getState() {
+    public TransactionState getState() {
         return state;
     }
 
@@ -88,7 +88,7 @@ public class Transaction {
     }
 
     public void addTransfer(Transfer t) throws IllegalTransactionStateException {
-        if(this.state != TransferState.READY || this.state != TransferState.FAILED)
+        if(this.state != TransactionState.READY || this.state != TransactionState.FAILED)
                         throw new IllegalTransactionStateException("Transaktion abgelaufen");
         this.transfersList.add(t);
     }
@@ -99,7 +99,7 @@ public class Transaction {
             // Wenn ein Transfer Object fehlerhaft, dann setzte Status auf "FAILED
             // Somit ist weitere Suche unnötig"
             if(!t.getState()){
-                this.state = TransferState.FAILED;
+                this.state = TransactionState.FAILED;
                 return;
             }
 
@@ -107,39 +107,3 @@ public class Transaction {
     }
 }
 
-
-
-enum TransferState {
-
-    READY("ready"),
-    FAILED("failed"),
-    COMMITED("commited"),
-    ROLLBACK("rollback");
-
-    private String val;
-
-    TransferState(String val) {
-        this.val = val;
-    }
-
-    public String getVal() {
-        return val;
-    }
-}
-
-enum TransferAction {
-
-    COMMIT("commit"),
-    ROLLBACK("rollback"),
-    RADY("ready");
-
-    private String val;
-
-    TransferAction(String val) {
-        this.val = val;
-    }
-
-    public String getVal() {
-        return val;
-    }
-}

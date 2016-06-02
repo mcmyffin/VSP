@@ -1,11 +1,15 @@
 package Boards.BoardManagerComponent;
 
+import Banks.BankManagerComponent.TransactionState;
+import Banks.BankManagerComponent.TransferAction;
 import Boards.BoardManagerComponent.DTOs.BoardDTO;
 import Boards.BoardManagerComponent.DTOs.PawnDTO;
 import Boards.BoardManagerComponent.Util.InitializeService;
+import Boards.Main;
 import Common.Exceptions.*;
 import Common.Util.URIObject;
 import Common.Util.URIParser;
+import Decks.DeckManagerComponent.Card;
 import Decks.DeckManagerComponent.DTOs.CardDTO;
 import Events.EventManagerComponent.DTO.EventDTO;
 import Games.GameManagerComponent.DTO.ComponentsDTO;
@@ -77,7 +81,7 @@ public class BoardManager {
             String playerID = playerDTO.getId();
 
             // try to aquire mutex
-            HttpResponse<String> gamesAquireMutexResponse   = Unirest.put(board.getGameURI().getAbsoluteURI()+"/players/turn")
+            HttpResponse<String> gamesAquireMutexResponse   = Unirest.put(board.getGameURIObject().getAbsoluteURI()+"/players/turn")
                     .queryString("player",playerID).asString();
 
             if(gamesAquireMutexResponse.getStatus() == 200){
@@ -89,7 +93,7 @@ public class BoardManager {
                 throw new MutexNotReleasedException("Mutex already aquired by an other player");
             }else{
                    throw new ServiceNotAvaibleException("Game Service unerwarteter Response-Code\n" +
-                                                        "get("+board.getGameURI().getAbsoluteURI()+"/players/turn)\n" +
+                                                        "get("+board.getGameURIObject().getAbsoluteURI()+"/players/turn)\n" +
                                                         "status: "+gamesAquireMutexResponse.getStatus()+"\n" +
                                                         "body:  "+gamesAquireMutexResponse.getBody());
             }
@@ -110,7 +114,7 @@ public class BoardManager {
             HttpResponse<String> gamesPlayerResponse = Unirest.get(playerURI).asString();
 
             // hole den Player der aktuell am Zug ist
-            HttpResponse<String> gamesCurrentResponse   = Unirest.get(board.getGameURI().getAbsoluteURI()+"/players/current").asString();
+            HttpResponse<String> gamesCurrentResponse   = Unirest.get(board.getGameURIObject().getAbsoluteURI()+"/players/current").asString();
 
             if(gamesPlayerResponse.getStatus() == 200 && gamesCurrentResponse.getStatus() == 200){
 
@@ -125,7 +129,7 @@ public class BoardManager {
                                             "get("+playerURI+")\n" +
                                             "status: "+gamesPlayerResponse.getStatus()+"\n" +
                                             "body: "+gamesPlayerResponse.getBody()+"\n" +
-                                            "get("+board.getGameURI().getAbsoluteURI()+"/players/turn"+")\n" +
+                                            "get("+board.getGameURIObject().getAbsoluteURI()+"/players/turn"+")\n" +
                                             "status: "+gamesCurrentResponse.getStatus()+"\n" +
                                             "body: "+gamesCurrentResponse.getBody());
             }
@@ -137,38 +141,34 @@ public class BoardManager {
         }
     }
 
-    private int getDiceNumber(Board board) throws ServiceNotAvaibleException {
+    private int getDiceNumber(Board board) throws ServiceNotAvaibleException, WrongFormatException {
 
         try{
-            HttpResponse<String> response = Unirest.get(board.getGameURI().getAbsoluteURI()+"/components").asString();
+            ComponentsDTO componentsDTO = board.getGameComponents();
+            String diceURI = componentsDTO.getDice();
 
-            if(response.getStatus() == 200){
+            if(diceURI == null) throw new ServiceNotAvaibleException("Dice Service not found");
 
-                ComponentsDTO componentsDTO = gson.fromJson(response.getBody(),ComponentsDTO.class);
-                String diceURI = componentsDTO.getDice();
+            HttpResponse<JsonNode> diceResponse = Unirest.get(diceURI).asJson();
+            if(diceResponse.getStatus() == 200){
 
-                if(diceURI == null) throw new ServiceNotAvaibleException("Dice Service not found");
+                JSONObject jsonObject = diceResponse.getBody().getObject();
+                int number = jsonObject.getInt("number");
+                return number;
 
-                HttpResponse<JsonNode> diceResponse = Unirest.get(diceURI).asJson();
-                if(diceResponse.getStatus() == 200){
+            }else throw new ServiceNotAvaibleException("Dice Service-Response != 200");
 
-                    JSONObject jsonObject = diceResponse.getBody().getObject();
-                    String stringNumber = jsonObject.get("number").toString();
 
-                    return Integer.parseInt(stringNumber);
-
-                }else throw new ServiceNotAvaibleException("Dice Service-Response != 200");
-            }else throw new ServiceNotAvaibleException("Game Service-Response != 200");
-
-        } catch (UnirestException | JsonSyntaxException ex){
+        } catch (UnirestException ex){
             throw new ServiceNotAvaibleException(ex.getMessage());
+        }catch (JsonSyntaxException ex){
+            throw new WrongFormatException("Dice Number type wrong",ex);
         }
     }
 
-    private EventDTO createEvent(Board board, Pawn pawn,String type, String name, String reason, String resource) throws ServiceNotAvaibleException, WrongFormatException {
-        String game = board.getGameURI().getAbsoluteURI();
+    private EventDTO createEvent(Board board, String player,String type, String name, String reason, String resource) throws ServiceNotAvaibleException, WrongFormatException {
+        String game = board.getGameURIObject().getAbsoluteURI();
         String time = Long.toString(System.currentTimeMillis());
-        String player = pawn.getPlayer();
 
         EventDTO eventPostDTO = new EventDTO(
 
@@ -180,28 +180,44 @@ public class BoardManager {
                                     player,
                                     time
                                 );
-        try{
-            HttpResponse<String> componentsResponse = Unirest.get(game+"/components").asString();
-            if(componentsResponse.getStatus() != 200) throw new ServiceNotAvaibleException("Game Service GET - Wrong response code");
 
-            String eventManagerURI = gson.fromJson(componentsResponse.getBody(),ComponentsDTO.class).getEvent();
+        String eventJsonString = gson.toJson(eventPostDTO);
+        try{
+            ComponentsDTO componentsDTO = board.getGameComponents();
+            String eventManagerURI = componentsDTO.getEvent();
 
             HttpResponse<String> eventPostResponse = Unirest
                                                         .post(eventManagerURI)
                                                         .header("Content-Type","application/json")
-                                                        .body(gson.toJson(eventPostDTO)).asString();
-            if(eventPostResponse.getStatus() != 201) throw new ServiceNotAvaibleException("Event Service POST -  Wrong response code");
+                                                        .body(eventJsonString).asString();
 
-            HttpResponse<String> eventGetResponse = Unirest.get(eventPostResponse.getHeaders().getFirst("Location")).asString();
-            if(eventGetResponse.getStatus() != 200) throw new ServiceNotAvaibleException("Event Service GET - Wrong response code");
+            if(eventPostResponse.getStatus() != 201){
+                throw new ServiceNotAvaibleException("Event Service POST -  Wrong response code\n" +
+                                                        "post("+eventManagerURI+")\n" +
+                                                        "req_header(\"Content-Type\":\"application/json\")\n" +
+                                                        "req_body: "+eventJsonString+"\n"+
+                                                        "res_status: "+eventPostResponse.getStatus()+"\n" +
+                                                        "res_body: "+eventPostResponse.getBody());
+            }
+
+            // get response Locationheader
+            String eventResponseLocationURI =  eventPostResponse.getHeaders().getFirst("Location");
+
+            HttpResponse<String> eventGetResponse = Unirest.get(eventResponseLocationURI).asString();
+            if(eventGetResponse.getStatus() != 200){
+                throw new ServiceNotAvaibleException("Event Service GET - Wrong response code\n" +
+                                                        "get("+eventResponseLocationURI+")\n" +
+                                                        "status: "+eventGetResponse.getStatus()+"\n" +
+                                                        "body: "+eventGetResponse.getBody());
+            }
 
             EventDTO eventGetDTO = gson.fromJson(eventGetResponse.getBody(),EventDTO.class);
             return eventGetDTO;
 
         }catch (UnirestException ex){
-            throw new ServiceNotAvaibleException(ex.getMessage());
+            throw new ServiceNotAvaibleException("Event Service unerreichbar",ex);
         }catch (JsonSyntaxException ex){
-            throw new WrongFormatException();
+            throw new WrongFormatException("Json Syntax wrong format",ex);
         }
     }
 
@@ -209,15 +225,236 @@ public class BoardManager {
         checkNotNull(pawn);
         checkNotNull(board);
 
-        String bankURI = getBankURI(board.getGameURI().getAbsoluteURI());
-        String toAccountID = getPlayerAccountID(pawn.getPlayer());
-        int amount = 200;
-        String reason = "Player walks over \"LOS\"";
-        List<EventDTO> eventDTOList = createtransferTo(bankURI,toAccountID,amount,reason);
+        String bankURI      = board.getGameComponents().getBank();
+        String toAccountID  = getPlayerAccountID(pawn.getPlayer());
+        int amount          = 200;
+
+        String reason       = "Player walks over \"LOS\"";
+        List<EventDTO> eventDTOList = createTransferTo(bankURI,toAccountID,amount,reason);
+
         return eventDTOList;
     }
 
-    private List<EventDTO> createtransferTo(String bankURI,String toAccount,int amount, String reason) throws ServiceNotAvaibleException {
+
+    private List<EventDTO> createTransferEveryBodyTo(Board board, String bankURI, String toAccountID, int amount, String reason) throws ServiceNotAvaibleException {
+        checkNotNull(board);
+        checkNotNull(bankURI);
+        checkNotNull(toAccountID);
+        checkNotNull(reason);
+
+        // create EventList
+        List<EventDTO> eventList = new ArrayList();
+
+        // get Bankaccounts
+        List<String> fromAccountList = new ArrayList();
+        for(Pawn p : board.getPawnsMap().values()){
+            String account = getPlayerAccountID(p.getPlayer());
+            fromAccountList.add(account);
+        }
+
+        // entferne Account, welcher bezahlt werden soll
+        fromAccountList.remove(toAccountID);
+
+        // erstelle eine Transaction bei der Bank
+        String transactionID = createTransactionID(bankURI);
+
+        // execute transfers
+        for(String accountID : fromAccountList){
+
+            List<EventDTO> events = createTransferFromToWithTransaction(bankURI,accountID,toAccountID,amount,reason,transactionID);
+            eventList.addAll(events);
+        }
+
+        TransactionState state = getTransactionStateByID(bankURI,transactionID);
+
+        if(state.equals(TransactionState.READY)){
+            commitTransactionByID(bankURI,transactionID);
+        }else{
+            rollbackTransactionByID(bankURI,transactionID);
+        }
+
+        return eventList;
+
+    }
+
+    private void rollbackTransactionByID(String bankURI, String transactionID) throws ServiceNotAvaibleException {
+        checkNotNull(bankURI);
+        checkNotNull(transactionID);
+
+        String transactionURI = bankURI+"/transaction"+transactionID;
+
+        try{
+
+            HttpResponse<String> rollbackResponse = Unirest.delete(transactionURI).asString();
+            if(rollbackResponse.getStatus() != 200){
+                throw new ServiceNotAvaibleException("Bank Service unerwarteter Response-Code\n" +
+                                                    "delete("+transactionURI+")\n" +
+                                                    "status: "+rollbackResponse.getStatus()+"\n" +
+                                                    "body: "+rollbackResponse.getBody());
+            }
+
+        }catch (UnirestException ex){
+            throw new ServiceNotAvaibleException("Bank Service nicht erreichbar",ex);
+        }
+    }
+
+    private void commitTransactionByID(String bankURI, String transactionID) throws ServiceNotAvaibleException {
+        checkNotNull(bankURI);
+        checkNotNull(transactionID);
+
+        String transactionURI = bankURI+"/transaction"+transactionID;
+
+        try{
+
+            HttpResponse<String> transactionResponse = Unirest.put(transactionURI).queryString("state", TransferAction.COMMIT.getVal()).asString();
+            if(transactionResponse.getStatus() != 200){
+                throw new ServiceNotAvaibleException("Bank Service unerwarteter Response-Code\n" +
+                                                    "put("+transactionURI+")\n"+
+                                                    "query( state , "+TransferAction.COMMIT.getVal()+")\n"+
+                                                    "status: "+transactionResponse.getStatus()+"\n" +
+                                                    "body: "+transactionResponse.getBody());
+            }
+
+        }catch (UnirestException ex){
+            throw new ServiceNotAvaibleException("Bank Service nicht erreichbar",ex);
+        }
+    }
+
+    private TransactionState getTransactionStateByID(String bankURI, String transactionID) throws ServiceNotAvaibleException {
+        checkNotNull(bankURI);
+        checkNotNull(transactionID);
+
+        String transactionStateURI = bankURI+"/transaction"+transactionID;
+
+        try{
+            HttpResponse<String> transactionStateResponse = Unirest.get(transactionStateURI).asString();
+            if(transactionStateResponse.getStatus() == 200){
+
+                String stringState = transactionStateResponse.getBody();
+                stringState = stringState.toUpperCase();
+
+                TransactionState state = TransactionState.valueOf(stringState);
+                return state;
+
+            }else {
+                throw new ServiceNotAvaibleException("Bank Service unerwarteter Response-Code\n" +
+                                                        "get("+transactionStateURI+")\n" +
+                                                        "status: "+transactionStateResponse.getStatus()+"\n" +
+                                                        "body: "+transactionStateResponse.getBody());
+            }
+        }catch (UnirestException ex){
+            throw new ServiceNotAvaibleException("Bank Service nicht erreichbar",ex);
+        }
+    }
+
+    private List<EventDTO> createTransferFromToWithTransaction(String bankURI, String fromAccountID, String toAccountID,
+                                                                                    int amount, String reason, String transactionID) throws ServiceNotAvaibleException {
+        checkNotNull(bankURI);
+        checkNotNull(fromAccountID);
+        checkNotNull(toAccountID);
+        checkNotNull(reason);
+        checkNotNull(transactionID);
+
+        String transferURI = bankURI+"/transfer/from"+fromAccountID+"/to"+toAccountID+"/"+amount;
+        List<EventDTO> eventList = new ArrayList();
+        try{
+
+            HttpResponse<JsonNode> transferResponse = Unirest.post(transactionID).queryString("transaction",transactionID)
+                                                                                .header("Content-Type","application/json")
+                                                                                .body(reason)
+                                                                                .asJson();
+            // wenn transaction erfolgreich
+            if(transferResponse.getStatus() == 201){
+
+                for(Object o : transferResponse.getBody().getArray()){
+                    EventDTO event = gson.fromJson(o.toString(),EventDTO.class);
+                    eventList.add(event);
+                }
+
+                return eventList;
+
+            // wenn transaction gescheitert
+            }else if(transferResponse.getStatus() == 403){
+                // todo erstelle Event (transaction bei account xy ist gescheitert)
+                // todo überprüfe ob account xy genug geld hat
+                // todo setzte player des accounts xy auf pleite (spieler hat verloren)
+                throw new UnsupportedOperationException();
+            }else {
+                throw new ServiceNotAvaibleException("Bank Service unerwarteter Response-Code\n" +
+                                                    "post()\n" +
+                                                    "status: "+transferResponse.getStatus()+"\n" +
+                                                    "body: "+transferResponse.getBody());
+            }
+
+        }catch (UnirestException ex){
+            throw new ServiceNotAvaibleException("Bank Service nicht erreichbar",ex);
+        }
+    }
+
+    private String createTransactionID(String bankURI) throws ServiceNotAvaibleException {
+        checkNotNull(bankURI);
+
+        // baue transactionURI
+        String transactionURI = bankURI+"/transaction";
+        try{
+            // sende Post anfrage
+            HttpResponse<String> transactionResponse = Unirest.post(transactionURI).asString();
+            // Wenn status erwartet
+            if(transactionResponse.getStatus() == 200){
+                // hole transactionURI aus dem LOCATION-HEADER
+                String transactionResponseURI = transactionResponse.getHeaders().getFirst("Location");
+                URIObject uriObject = URIParser.createURIObject(transactionResponseURI);
+                return uriObject.getId();
+            }else{
+                throw new ServiceNotAvaibleException("Bank Service unerwarteter Response-Code\n" +
+                                                    "post("+transactionURI+")\n" +
+                                                    "status: "+transactionResponse.getStatus()+"\n" +
+                                                    "body: "+transactionResponse.getBody());
+            }
+
+        }catch (UnirestException ex){
+            throw new ServiceNotAvaibleException("Bank Service nicht erreichbar",ex);
+        } catch (URISyntaxException e) {
+            throw new ServiceNotAvaibleException("Bank create Transaction - Location URI wrong syntax",e);
+        }
+    }
+
+
+    private List<EventDTO> createTransferFrom(String bankURI, String fromAccountID, int amount, String reason) throws ServiceNotAvaibleException {
+        checkNotNull(bankURI);
+        checkNotNull(fromAccountID);
+        checkNotNull(reason);
+
+        try{
+            String bankTransferURI = bankURI+"/transfer/from"+fromAccountID+"/"+amount;
+            HttpResponse<JsonNode> bankResponse = Unirest.post(bankTransferURI)
+                    .header("Content-Type","application/json")
+                    .body(reason).asJson();
+            if(bankResponse.getStatus() == 201){
+
+                List<EventDTO> eventDTOList = new ArrayList();
+
+                for(Object o : bankResponse.getBody().getArray()){
+                    EventDTO eventDTO = gson.fromJson(o.toString(),EventDTO.class);
+                    eventDTOList.add(eventDTO);
+                }
+
+                return eventDTOList;
+            }else{
+                throw new ServiceNotAvaibleException("Bank Service unerwarteter Response-Code\n" +
+                        "post("+bankTransferURI+")\n" +
+                        "req_body: "+reason+"\n" +
+                        "res_status: "+bankResponse.getStatus()+"\n" +
+                        "res_body: "+bankResponse.getBody().toString());
+            }
+
+        }catch (UnirestException ex){
+            throw new ServiceNotAvaibleException("Bank Service nicht erreichbar");
+        }
+    }
+
+
+    private List<EventDTO> createTransferTo(String bankURI, String toAccount, int amount, String reason) throws ServiceNotAvaibleException {
         checkNotNull(bankURI);
         checkNotNull(toAccount);
         checkNotNull(reason);
@@ -274,32 +511,27 @@ public class BoardManager {
         }
     }
 
-    private String getBankURI(String gameURI) throws ServiceNotAvaibleException {
-        checkNotNull(gameURI);
+    private Card getCard(String deckURI) throws ServiceNotAvaibleException {
+        checkNotNull(deckURI);
+
         try{
-            // get game Components
-            HttpResponse<String> gameResponse = Unirest.get(gameURI+"/components").asString();
-            if(gameResponse.getStatus() != 200){
-                throw new ServiceNotAvaibleException("Game Service unerwarteter Response-Code\n" +
-                                                    "get("+gameURI+"/components"+")\n"+
-                                                    "status: "+gameResponse.getStatus()+"\n" +
-                                                    "body: "+gameResponse.getBody());
+            HttpResponse<String> deckResponse = Unirest.get(deckURI).asString();
+            if(deckResponse.getStatus() == 200){
+                // get JsonObject from Body
+                String body = deckResponse.getBody();
+                // parse jsonObject to DTO
+                CardDTO cardDTO =  gson.fromJson(body,CardDTO.class);
+                Card card = Card.fromDTO(cardDTO);
+                return card;
             }else{
-                ComponentsDTO componentsDTO =  gson.fromJson(gameResponse.getBody(),ComponentsDTO.class);
-                return componentsDTO.getBank();
+                throw new ServiceNotAvaibleException("Deck Service Response-Code != 200\n" +
+                                                    "get("+deckURI+")\n" +
+                                                    "status: "+deckResponse.getStatus()+"\n" +
+                                                    "body: "+deckResponse.getBody());
             }
-
         }catch (UnirestException ex){
-            throw new ServiceNotAvaibleException("Game Service nicht erreichbar",ex);
+            throw new ServiceNotAvaibleException("Deck Service nicht erreichbar",ex);
         }
-    }
-
-    private CardDTO getCommunityCard(){
-        throw new UnsupportedOperationException();
-    }
-
-    private CardDTO getChanceCard(){
-        throw new UnsupportedOperationException();
     }
 
     private List<EventDTO> notifyBrokerByVisitPlace(Place place, Pawn pawn) throws WrongFormatException, ServiceNotAvaibleException {
@@ -344,6 +576,63 @@ public class BoardManager {
         }catch (UnirestException ex){
             throw new ServiceNotAvaibleException("Broker Service nicht erreichbar",ex);
         }
+    }
+
+    private List<EventDTO> executeCardAction(Board board, Card card, String cardType, String fieldName, Pawn pawn) throws PawnNotFoundException, BoardNotFoundException, UnirestException, ServiceNotAvaibleException, WrongFormatException {
+        checkNotNull(board);
+        checkNotNull(card);
+        checkNotNull(cardType);
+        checkNotNull(pawn);
+
+        switch (card.getCardAction()){
+            case BEWEGE_DICH: {
+                // execute movement
+                List<EventDTO> events = movePawnByCard(board,pawn,card.getCardAction().getNumber(),cardType);
+                return events;
+            }
+            case GEFAENGNIS: {
+                // create Event
+                EventDTO event = createEvent(board,
+                        pawn.getPlayer(),
+                        "Board execute Pawn jump",
+                        "Player jump to Jail",
+                        "Player stands on "+fieldName,
+                        Main.URL+pawn.getId());
+
+                // set Pawn to Jail
+                board.setPawnToJail(pawn.getId());
+
+                List<EventDTO> events = new ArrayList();
+                events.add(event);
+
+                return events;
+            }
+            case BEZAHLE_GELD_AN_BANK: {
+                // nummerische Geldmenge
+                String bankURI = board.getGameComponents().getBank();
+                String fromAccountID = getPlayerAccountID(pawn.getPlayer());
+                int amount = card.getCardAction().getNumber();
+
+                return createTransferFrom(bankURI,fromAccountID,amount,card.getText());
+            }
+            case ERHALTE_GELD_VON_BANK: {
+                // nummerische Geldmenge
+                String bankURI = board.getGameComponents().getBank();
+                String toAccountID = getPlayerAccountID(pawn.getPlayer());
+                int amount = card.getCardAction().getNumber();
+
+                return createTransferTo(bankURI,toAccountID,amount,card.getText());
+            }
+            case ERHALTE_GELD_VON_ALLEN: {
+                // nummerische Geldmenge
+                String bankURI = board.getGameComponents().getBank();
+                String toAccountID = getPlayerAccountID(pawn.getPlayer());
+                int amount = card.getCardAction().getNumber();
+
+                return createTransferEveryBodyTo(board,bankURI,toAccountID,amount,card.getText());
+            }
+        }
+        throw new UnsupportedOperationException("TODO");
     }
 
     /***************************/
@@ -495,7 +784,7 @@ public class BoardManager {
         String reason = "Player wants to roll Dice";
         String resource = "Number: "+number;
 
-        EventDTO eventPlayerDiceDTO = createEvent(board,pawn,type,name,reason,resource);
+        EventDTO eventPlayerDiceDTO = createEvent(board,pawn.getPlayer(),type,name,reason,resource);
         eventList.add(eventPlayerDiceDTO);
 
         // pawn bewegen
@@ -539,13 +828,16 @@ public class BoardManager {
 
         // 4. erstelle Event (Spieler wurde bewegt)
         String type = "pawn move";
-        String name = "Pawn Move Event";
+        String name = "Board execute Pawn Move";
         String reason = "Player wants to move";
-        String resource = pawn.getMove();
-        EventDTO eventPlayerMoveDTO = createEvent(board,pawn,type,name,reason,resource);
+        String resource = Main.URL+pawn.getId();
 
+        // create Event
+        EventDTO eventPlayerMoveDTO = createEvent(board,pawn.getPlayer(),type,name,reason,resource);
         eventList.add(eventPlayerMoveDTO);
 
+        // get Game Components
+        ComponentsDTO componentsDTO = board.getGameComponents();
 
         // Wenn kein Beoker für diesen Place eingetragen, dann nicht kaufbares Feld
         if(move.isUeberLos()){
@@ -555,18 +847,112 @@ public class BoardManager {
         if(move.getPlace().getBroker().isEmpty()){
             // Gemeinschaftskarte?
             if(move.getPlace().getName().equals("Gemeinschaftsfeld")){
-                CardDTO card = getCommunityCard();
-                // TODO erstelle Event und weitere Aktionen
+                // get Card
+                String deckURI = componentsDTO.getDecks()+"/community";
+                Card card = getCard(deckURI);
+
+                // create event
+                EventDTO event = createEvent(board,pawn.getPlayer(),"take Card",
+                                                    "Player takes Community-Card from Deck",
+                                                    "Player stands on Community-Card-Place",card.getText());
+
+                // execute Card Action and create Events
+                List<EventDTO> events = executeCardAction(board,card,"Community-Card place","Community card",pawn);
+                eventList.add(event);
+                eventList.addAll(eventList);
 
             // Ereigniskarte?
             }else if(move.getPlace().getName().equals("Ereignisfeld")){
-                CardDTO card = getChanceCard();
-                // TODO erstelle Event und weitere Aktionen
+                // get Card
+                String deckURI = componentsDTO.getDecks()+"/chance";
+                Card card = getCard(deckURI);
+
+                // create event
+                EventDTO event = createEvent(board,pawn.getPlayer(),"take Card",
+                        "Player takes Chance-Card from Deck",
+                        "Player stands on Chance-Card-Place",card.getText());
+
+                // execute Card Action and create Events
+                List<EventDTO> events = executeCardAction(board,card,"Chance-Card place","Community card",pawn);
+                eventList.add(event);
+                eventList.addAll(eventList);
 
             // Gefängnis
             }else if(move.getPlace().getName().equals("Gehen ins Gefängnis")){
                 board.setPawnToJail(pawnID);
-                // TODO erstelle Event
+            }
+
+        }else{
+            // Benachrichte Broker (weil Feld besucht)
+            List<EventDTO> list = notifyBrokerByVisitPlace(move.getPlace(),pawn);
+            eventList.addAll(list);
+        }
+
+        return eventList;
+    }
+
+    private List<EventDTO> movePawnByCard(Board board, Pawn pawn, int number, String cardType) throws BoardNotFoundException, PawnNotFoundException,
+            ServiceNotAvaibleException, WrongFormatException, UnirestException {
+
+        List<EventDTO> eventList = new ArrayList();
+
+        // 2. Pawn bewegen
+        PawnMove move = board.pawnRoll(pawn,number);
+
+        // 4. erstelle Event (Spieler wurde bewegt)
+        String type = "Board execute Pawn move";
+        String name = "Player execute "+cardType+" action";
+        String reason = "Player takes "+cardType;
+        String resource = Main.URL+pawn.getId();
+
+        // create Event
+        EventDTO eventPlayerMoveDTO = createEvent(board,pawn.getPlayer(),type,name,reason,resource);
+        eventList.add(eventPlayerMoveDTO);
+
+        // get Game Components
+        ComponentsDTO componentsDTO = board.getGameComponents();
+
+        // Wenn kein Beoker für diesen Place eingetragen, dann nicht kaufbares Feld
+        if(move.isUeberLos()){
+            List<EventDTO> events = notifyBankUeberLos(board,pawn);
+            eventList.addAll(eventList);
+        }
+        if(move.getPlace().getBroker().isEmpty()){
+            // Gemeinschaftskarte?
+            if(move.getPlace().getName().equals("Gemeinschaftsfeld")){
+                // get Card
+                String deckURI = componentsDTO.getDecks()+"/community";
+                Card card = getCard(deckURI);
+
+                // create event
+                EventDTO event = createEvent(board,pawn.getPlayer(),"take Card",
+                        "Player takes Community-Card from Deck",
+                        "Player stands on Community-Card-Place",card.getText());
+
+                // execute Card Action and create Events
+                List<EventDTO> events = executeCardAction(board,card,"Community-Card","Community-Place",pawn);
+                eventList.add(event);
+                eventList.addAll(eventList);
+
+            // Ereigniskarte?
+            }else if(move.getPlace().getName().equals("Ereignisfeld")){
+                // get Card
+                String deckURI = componentsDTO.getDecks()+"/chance";
+                Card card = getCard(deckURI);
+
+                // create event
+                EventDTO event = createEvent(board,pawn.getPlayer(),"take Card",
+                        "Player takes Chance-Card from Deck",
+                        "Player stands on Chance-Card-Place",card.getText());
+
+                // execute Card Action and create Events
+                List<EventDTO> events = executeCardAction(board,card,"Chance-Card","Chance-Card place",pawn);
+                eventList.add(event);
+                eventList.addAll(eventList);
+
+            // Gefängnis
+            }else if(move.getPlace().getName().equals("Gehen ins Gefängnis")){
+                board.setPawnToJail(pawn.getId());
             }
 
         }else{
