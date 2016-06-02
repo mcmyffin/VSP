@@ -12,7 +12,7 @@ import static spark.Spark.*;
  */
 public class Main extends MainAbstract{
 
-    public static int port = 5003;
+    public static int port = 4567;
     public static String ip = IPFinder.getIP();
 
     public static String name = "group_42";
@@ -185,6 +185,9 @@ public class Main extends MainAbstract{
         delete("/broker/:gameID/places/:placeID/hypothecarycredit", (req,res) -> {
             //siehe oben
             res.status(200);
+            if(!req.headers("Content-Type").equals("application/json")) throw new WrongContentTypeException();
+            res.header("Content-Type","application/json");
+
             String gameID = "/broker/"+req.params(":gameID");
             String placeID = gameID+"/places/"+req.params(":placeID");
 

@@ -19,7 +19,7 @@ import static spark.Spark.*;
  */
 public class Main extends MainAbstract{
 
-    public static int    port = 5004;
+    public static int    port = 4567;
     public static String ip = IPFinder.getIP();
 
     public static String name = "group_42";

@@ -465,7 +465,7 @@ public class BrokerManager {
         checkNotNull(placeID);
 
         Broker broker = getBrokerObjectByID(gameID);
-        BrokerPlace brokerPlace = broker.getBrokerPlaceByID(gameID);
+        BrokerPlace brokerPlace = broker.getBrokerPlaceByID(placeID);
 
         ComponentsDTO componentsDTO = getComponentsDTO(broker);
         List<EventDTO> eventList = new ArrayList();
@@ -531,20 +531,19 @@ public class BrokerManager {
         int visitCost = broker.getVisitCost(brokerPlace);
 
         //bank URI aufruf zum ausführen von das Transaktion
-        HttpResponse<String> httpBankResponse = Unirest.
-                post(bank+"/transfer/from"+visitorBankAccID+"/to"+ownerBankAccID+"/"+visitCost)
+        HttpResponse<JsonNode> httpBankResponse = Unirest
+                .post(bank+"/transfer/from"+visitorBankAccID+"/to"+ownerBankAccID+"/"+visitCost)
                 .header("Content-Type","application/json")
                 .body("User pay for visiting estate")
-                .asString();
+                .asJson();
 
         //wenn statuscode nicht stimmt, springe raus
         if(httpBankResponse.getStatus() != 201) throw new TransactionFailedException();
 
-        String bankBody = httpBankResponse.getBody();
-
-        //add event in der eventliste
-        EventDTO eventDTO = gson.fromJson(bankBody, EventDTO.class);
-        eventList.add(eventDTO);
+        for(Object o : httpBankResponse.getBody().getArray()){
+            EventDTO eventDTO = gson.fromJson(o.toString(),EventDTO.class);
+            eventList.add(eventDTO);
+        }
 
         //URI von events
         String event = componentsDTO.getEvent();

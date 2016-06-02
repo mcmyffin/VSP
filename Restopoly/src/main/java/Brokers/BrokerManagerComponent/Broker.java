@@ -125,7 +125,8 @@ public class Broker {
         int value = 0;
         int houses = 0;
         String visit = this.id+"/places/visit";
-        String hypocredit = this.id+"places/hypothecarycredit";
+
+        String hypocredit = placeID+"/hypothecarycredit";
 
         BrokerPlace brokerPlace = new BrokerPlace(placeID,name,place, owner,value,rent, cost, houses, visit, hypocredit);
         placesMap.put(placeID,brokerPlace);
