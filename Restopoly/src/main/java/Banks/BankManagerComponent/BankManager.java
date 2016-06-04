@@ -60,13 +60,9 @@ public class BankManager {
         );
 
         try{
-            System.out.println("Create Event:");
-            System.out.println("get("+game+"/components)");
-
             HttpResponse<String> componentsResponse = Unirest.get(game+"/components").asString();
             if(!componentsResponse.getHeaders().get("Content-Type").contains("application/json")) throw new ServiceNotAvaibleException("Games Service response wrong");
 
-            System.out.println("Response -> "+componentsResponse.getBody());
 
             String eventManagerURI = gson.fromJson(componentsResponse.getBody(),ComponentsDTO.class).getEvent();
             if(eventManagerURI == null || eventManagerURI.isEmpty()) throw new ServiceNotAvaibleException("Event Service not found");
@@ -390,7 +386,7 @@ public class BankManager {
         Bank bank = getBankObjectById(bankID);
         Transaction transaction = bank.getTransactionById(transactionID);
 
-        String state = TransferAction.ROLLBACK.getVal();
+        String state = TransferAction.ROLLBACK.name();
         transaction.setTransferAction(state);
 
         return transactionID;

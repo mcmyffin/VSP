@@ -145,6 +145,8 @@ public class Bank {
         checkNotNull(reason);
         checkNotNull(transactionID);
 
+        if(amount <= 0) throw new TransferFailedException("Illegal amount value");
+
         // get Transaction
         Transaction transaction = getTransactionById(transactionID);
 
@@ -154,7 +156,6 @@ public class Bank {
 
         transaction.addTransfer(newTransfer);
 
-        if(amount <= 0) throw new TransferFailedException("Illegal amount value");
 
         Account from = getAccountById(fromAccount);
         Account to   = getAccountById(toAccount);
@@ -201,6 +202,8 @@ public class Bank {
         checkNotNull(toAccount);
         checkNotNull(reason);
 
+        if(amount <= 0) throw new TransferFailedException("Illegal amount value");
+
         // get Transaction
         Transaction transaction = getTransactionById(transactionID);
 
@@ -210,14 +213,19 @@ public class Bank {
 
         transaction.addTransfer(newTransfer);
 
-        if(amount <= 0) throw new TransferFailedException("Illegal amount value");
         Account to   = getAccountById(toAccount);
 
-        if(to.getSaldo() < amount) throw new TransferFailedException("Tranfer faild. Account: "+toAccount+" insufficient fonds !");
+        if(to.getSaldo() < amount){
+            transaction.checkTransfers();
+            throw new TransferFailedException("Tranfer faild. Account: "+toAccount+" insufficient fonds !");
+        }
 
         newTransfer.setTo(to);
         newTransfer.setState(true);
         to.addMoney(amount);
+
+        // check transfers
+        transaction.checkTransfers();
 
         transfersMap.put(transferID,newTransfer);
         return transferID;
@@ -230,7 +238,7 @@ public class Bank {
 
         Account from = getAccountById(fromAccount);
 
-        if(from.getSaldo() < amount) throw new TransferFailedException("Tranfer faild. Account: "+from+" insufficient fonds !");
+        if(from.getSaldo() < amount) throw new TransferFailedException("Tranfer faild. Account: "+fromAccount+" insufficient fonds !");
 
         String transferID = getNextTransferID();
         Transfer newTransfer = new Transfer(transferID,from,null,amount,reason,true);
@@ -245,6 +253,8 @@ public class Bank {
         checkNotNull(fromAccount);
         checkNotNull(reason);
 
+        if(amount <= 0) throw new TransferFailedException("Illegal amount value");
+
         // get Transaction
         Transaction transaction = getTransactionById(transactionID);
 
@@ -254,14 +264,19 @@ public class Bank {
 
         transaction.addTransfer(newTransfer);
 
-        if(amount <= 0) throw new TransferFailedException("Illegal amount value");
 
         Account from = getAccountById(fromAccount);
-        if(from.getSaldo() < amount) throw new TransferFailedException("Tranfer faild. Account: "+from+" insufficient fonds !");
+        if(from.getSaldo() < amount){
+            transaction.checkTransfers();
+            throw new TransferFailedException("Tranfer faild. Account: "+fromAccount+" insufficient fonds !");
+        }
 
         newTransfer.setFrom(from);
         newTransfer.setState(true);
         from.substractMoney(amount);
+
+        // check transfers
+        transaction.checkTransfers();
 
         transfersMap.put(transferID,newTransfer);
         return transferID;

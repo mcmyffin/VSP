@@ -36,10 +36,11 @@ public class Main extends MainAbstract{
         Main main = new Main();
 
         BankManager bankManager = new BankManager();
-        RegistrationService registrationService = new RegistrationService(main);
-
-        registrationService.startRegistration();
-        YellowPageService.startListening();
+        System.out.println("=== Banks ===");
+//        RegistrationService registrationService = new RegistrationService(main);
+//
+//        registrationService.startRegistration();
+//        YellowPageService.startListening();
 
         /**
          * List of available banks
