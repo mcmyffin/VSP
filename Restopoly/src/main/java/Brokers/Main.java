@@ -34,8 +34,9 @@ public class Main extends MainAbstract{
         Main main = new Main();
         BrokerManager brokerManager = new BrokerManager();
 
-        RegistrationService registrationService = new RegistrationService(main);
-        registrationService.startRegistration();
+        System.out.println("=== Brokers ===");
+//        RegistrationService registrationService = new RegistrationService(main);
+//        registrationService.startRegistration();
 
 
         post("/broker", (req, res) -> {
@@ -156,6 +157,7 @@ public class Main extends MainAbstract{
         post("/broker/:gameID/places/:placeID/owner", (req,res) -> {
             //siehe oben
             res.status(200);
+            res.header("Content-Type","application/json");
 
             String gameID = "/broker/"+req.params(":gameID");
             String placeID = gameID+"/places/"+req.params(":placeID");
