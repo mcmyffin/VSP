@@ -49,6 +49,10 @@ public class Pawn {
         return move;
     }
 
+    public void setPlaces(String places) {
+        this.places = places;
+    }
+
     public static Pawn fromDTO(PawnDTO pawnDTO){
         checkNotNull(pawnDTO);
 
