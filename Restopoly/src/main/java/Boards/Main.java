@@ -39,10 +39,11 @@ public class Main extends MainAbstract{
         Main main = new Main();
 
         BoardManager boardManager = new BoardManager();
-        RegistrationService registrationService = new RegistrationService(main);
-
-        registrationService.startRegistration();
-        YellowPageService.startListening();
+        System.out.println("=== Boards ===");
+//        RegistrationService registrationService = new RegistrationService(main);
+//
+//        registrationService.startRegistration();
+//        YellowPageService.startListening();
 
         /**
          * returns all active games (both running and joinable)
@@ -331,6 +332,13 @@ public class Main extends MainAbstract{
             res.body(ex.getMessage());
             ex.printStackTrace();
         });
+
+        exception(Exception.class, (ex, req, res) -> {
+            res.status(409);// conflict
+            res.body(ex.getMessage());
+            ex.printStackTrace();
+        });
+
         /********************/
 
     }
