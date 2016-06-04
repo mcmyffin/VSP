@@ -41,5 +41,14 @@ public class Card {
         CardAction action = CardAction.fromDTO(cardDTO.getCardAction());
         return new Card(cardDTO.getName(),cardDTO.getText(),action);
     }
+
+    @Override
+    public String toString() {
+        return "Card{" +
+                "name='" + name + '\'' +
+                ", text='" + text + '\'' +
+                ", action=" + action +
+                '}';
+    }
 }
 

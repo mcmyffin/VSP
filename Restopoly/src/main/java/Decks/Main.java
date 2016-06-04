@@ -18,7 +18,7 @@ import static spark.Spark.*;
  */
 public class Main extends MainAbstract{
 
-    public static int    port = 5002;
+    public static int    port = 4567;
     public static String ip   = IPFinder.getIP();
 
     public static String name = "group_42";
@@ -38,10 +38,10 @@ public class Main extends MainAbstract{
         Main main = new Main();
 
         DeckManager deckManager = new DeckManager();
-        RegistrationService registrationService = new RegistrationService(main);
 
-
-        registrationService.startRegistration();
+        System.out.println("=== Decks ===");
+//        RegistrationService registrationService = new RegistrationService(main);
+//        registrationService.startRegistration();
 
         /**
          * List of available deck

@@ -26,14 +26,14 @@ public class GameDecks {
 
     }
 
-    void initializeDecks(){
+    synchronized void initializeDecks(){
         this.communityDeck  = new Deck(createCommunityCards());
         this.chanceDeck     = new Deck(createChanceCards());
     }
 
-    private Card createCard(String name, String txt,CardAction action){ return new Card(name,txt,action);}
+    private synchronized Card createCard(String name, String txt,CardAction action){ return new Card(name,txt,action);}
 
-    private List<Card> createCommunityCards(){
+    private synchronized List<Card> createCommunityCards(){
         List<Card> cards = new ArrayList();
 
 //        cards.add(createCard("Gefaengnis frei","Sie kommen aus dem Gefängnis frei! Behalten Sie diese Karte, bis Sie sie benötigen oder verkaufen."));
@@ -51,10 +51,15 @@ public class GameDecks {
         cards.add(createCard("Zweiter Preis","Zweiter Preis im Schönheitswettbewerb. Sie erhalten 10.",CardAction.createAction(10,CardAction.ERHALTE_GELD_VON_BANK)));
 //        cards.add(createCard("Straßenausbesserungsarbeiten","Sie werden zu Straßenausbesserungsarbeiten herangezogen. Zahlen Sie 40 je Haus und 115 je Hotel an die Bank"));
 
+        System.out.println("=== DEBUG OUT ===");
+        System.out.println("INITIALIZE COMMUNITY CARDS");
+        System.out.println(cards.toString());
+        System.out.println("=================");
+
         return cards;
     }
 
-    private List<Card> createChanceCards(){
+    private synchronized List<Card> createChanceCards(){
         List<Card> cards = new ArrayList();
 
         cards.add(createCard("zurueck","Gehe drei Felder zurück",CardAction.createAction(-3,CardAction.BEWEGE_DICH)));
@@ -65,6 +70,11 @@ public class GameDecks {
 //        cards.add(createCard("verreisen","Du willst verreisen, gehe zum Hauptbahnhof. Wenn du über Los kommst, ziehe 200 ein"));
         cards.add(createCard("bank","Die Bank zahlt dir eine Dividende von 750",CardAction.createAction(750,CardAction.ERHALTE_GELD_VON_BANK)));
         cards.add(createCard("rennen","Da du sportlich bist, hast du beim Rennen gewonnen. Ziehe 1500 ein",CardAction.createAction(1500,CardAction.ERHALTE_GELD_VON_BANK)));
+
+        System.out.println("=== DEBUG OUT ===");
+        System.out.println("INITIALIZE CHANCE CARDS");
+        System.out.println(cards.toString());
+        System.out.println("=================");
 
         return cards;
     }
