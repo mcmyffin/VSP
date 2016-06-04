@@ -1,9 +1,13 @@
 package Games.GameManagerComponent;
 
 import Common.Exceptions.GameFullException;
+import Common.Exceptions.PlayerAlreadyExistsException;
 import Common.Exceptions.PlayerNotFoundException;
+import Common.Util.URIObject;
+import Common.Util.URIParser;
 import Games.GameManagerComponent.DTO.PlayerDTO;
 
+import java.net.URISyntaxException;
 import java.util.*;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -26,12 +30,18 @@ public class PlayerManager {
         this.playerQueue = new LinkedList();
     }
 
-    public synchronized String addPlayer(PlayerDTO playerDTO) throws GameFullException {
+    public synchronized String addPlayer(PlayerDTO playerDTO) throws GameFullException, URISyntaxException, PlayerAlreadyExistsException {
         checkNotNull(playerDTO);
         if(playerMap.size() > maxPlayer) throw new GameFullException();
 
+        // build uri to URIObject
+        URIObject uriObject = URIParser.createURIObject(playerDTO.getUser());
 
-        String playerID = this.id+"/"+playerMap.size() ;
+        // create id
+        String playerID = this.id+uriObject.getId();
+
+        // check if id already exists
+        if(playerMap.containsKey(playerID)) throw new PlayerAlreadyExistsException("Player alredy exists");
 
         playerDTO.setId(playerID);
         Player player = Player.fromDTO(playerDTO);
