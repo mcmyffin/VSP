@@ -3,6 +3,7 @@ package Banks.BankManagerComponent;
 import Common.Exceptions.IllegalTransactionStateException;
 import Common.Exceptions.UndefinedTransactionStateException;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -20,6 +21,7 @@ public class Transaction {
         checkNotNull(id);
         this.id = id;
         this.state = TransactionState.READY;
+        this.transfersList = new ArrayList();
     }
 
     public synchronized void setTransferAction(String state) throws UndefinedTransactionStateException, IllegalTransactionStateException {
@@ -36,7 +38,11 @@ public class Transaction {
 
                 if(transferAction.equals(TransferAction.RADY)) return; // status bleibt unverändert
                 else if(transferAction.equals(TransferAction.COMMIT)) this.state = TransactionState.COMMITED;
-                else throw new IllegalTransactionStateException();
+                else if(transferAction.equals(TransferAction.ROLLBACK)){
+                    this.state = TransactionState.ROLLBACK;
+                    runRollback();
+                }
+                else throw new IllegalTransactionStateException("ungültiger Transaktion Status");
 
             // Transaction ist beim Commit fehlgeschlagen
             }else if(this.state.equals(TransactionState.FAILED)){
@@ -44,6 +50,7 @@ public class Transaction {
                     this.state = TransactionState.ROLLBACK;
                     runRollback();
                 }
+                else throw new IllegalTransactionStateException("ungültiger Transaktion Status");
             }
 
 
@@ -55,7 +62,7 @@ public class Transaction {
     private void runRollback() {
         for(Transfer t : transfersList) {
             if (t.getState()) {
-
+                revertMoney(t);
             }
         }
     }
@@ -88,9 +95,12 @@ public class Transaction {
     }
 
     public void addTransfer(Transfer t) throws IllegalTransactionStateException {
-        if(this.state != TransactionState.READY || this.state != TransactionState.FAILED)
-                        throw new IllegalTransactionStateException("Transaktion abgelaufen");
-        this.transfersList.add(t);
+        checkNotNull(t);
+        if(this.state == TransactionState.READY || this.state == TransactionState.FAILED){
+            this.transfersList.add(t);
+        }else{
+            throw new IllegalTransactionStateException("Transaktion abgelaufen");
+        }
     }
 
     void checkTransfers(){
