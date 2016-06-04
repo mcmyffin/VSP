@@ -1,12 +1,15 @@
 package Events.EventManagerComponent;
 
 import Common.Exceptions.RequiredJsonParamsNotFoundException;
+import Common.Exceptions.ServiceNotAvaibleException;
 import Events.EventManagerComponent.DTO.EventDTO;
 import Events.EventManagerComponent.DTO.SubscriberDTO;
 import com.google.gson.Gson;
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
+
+import java.util.List;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -46,20 +49,38 @@ public class Subscriber {
         return eventRegex;
     }
 
-    void sendToSubscriber(Event event){
-        checkNotNull(event);
-        sendToSubscriber(event.toDTO());
+    void sendToSubscriber(List<EventDTO> eventlist){
+        checkNotNull(eventlist);
+
+        // create Runnabe
+        Runnable sendRunnable =  new Runnable() {
+            @Override
+            public void run() {
+                sendToSubscriber(gson.toJson(eventlist));
+            }
+        };
+
+        // create and run Thread
+        Thread sendThread = new Thread(sendRunnable);
+        sendThread.start();
     }
 
-    void sendToSubscriber(EventDTO eventDTO){
-        checkNotNull(eventDTO);
+    void sendToSubscriber(String obj){
+        checkNotNull(obj);
 
         try{
+            HttpResponse<String> response = Unirest.post(uri).header("Content-Type","application/json")
+                                                                     .body(obj)
+                                                                     .asString();
 
-            String json = gson.toJson(eventDTO);
-            Unirest.post(uri).header("Content-Type","application/json")
-                                                             .body(json)
-                                                             .asString();
+            if(response.getStatus() != 200){
+                System.out.println(uri+" sendet unerwarteten Response-Code\n" +
+                                    "post("+uri+")\n" +
+                                    "req.header(\"Content-Type\",\"application/json\")\n" +
+                                    "req..body("+obj+")\n" +
+                                    "res.status: "+response.getStatus()+"\n" +
+                                    "res.body: "+response.getBody());
+            }
 
         }catch (UnirestException ex){
             System.out.println(uri+" unavailable");

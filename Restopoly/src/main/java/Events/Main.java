@@ -36,8 +36,9 @@ public class Main extends MainAbstract {
 
         Main main = new Main();
         EventManager eventManager = new EventManager();
-        RegistrationService registrationService = new RegistrationService(main);
-        registrationService.startRegistration();
+        System.out.println("=== Events ===");
+//        RegistrationService registrationService = new RegistrationService(main);
+//        registrationService.startRegistration();
 
 
         YellowPageService.startListening();
@@ -74,6 +75,7 @@ public class Main extends MainAbstract {
         post("/events/subscriptions", (req,res) -> {
             res.status(200);
             checkContentTypeJson(req);
+            setResponseContentTypeJson(res);
 
             String jsonBody = req.body();
             String subscriberID = eventManager.createSubscriber(jsonBody);

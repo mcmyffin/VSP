@@ -44,6 +44,9 @@ public class EventManager {
     private synchronized void notifySubscribers(Event event){
         checkNotNull(event);
 
+        List<EventDTO> eventDTOList = new ArrayList();
+        eventDTOList.add(event.toDTO());
+
         String gameURI  = event.getGame();
         if(!subscriberMapList.containsKey(gameURI)) return;
 
@@ -53,7 +56,7 @@ public class EventManager {
         for(String subscriberID : subscribersList){
 
             Subscriber s = subscriberMap.get(subscriberID);
-            if(isRegexMatch(event,s.getEventRegex())) s.sendToSubscriber(event);
+            if(isRegexMatch(event,s.getEventRegex())) s.sendToSubscriber(eventDTOList);
 
         }
     }
