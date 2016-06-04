@@ -187,9 +187,6 @@ public class Board {
         // Gemeinschaftsfeld x 3
         createPlace(3, "Gemeinschaftsfeld", "");
 
-//        // Einkommensteuer x 1
-//        createPlace(1, "Einkommensteuer", "");
-
         // Ereignisfeld x 3
         createPlace(3, "Ereignisfeld", "");
 
@@ -199,9 +196,7 @@ public class Board {
         // Gehen ins Gefängnis
         createPlace(1, "Gehen ins Gefängnis", "");
 
-//        // Zusatzsteuer
-//        createPlace(1, "Zusatzsteuer", "");
-
+        // estates
         createAndRegisterPlacesFromBroker();
 
         // shuffel places
@@ -334,10 +329,13 @@ public class Board {
         // if number is negative
         positionAfter = (positionAfter < 0 ? size + positionAfter: positionAfter);
 
-        // set new Position to Pawn and add Pawn to Field at Position
-        pawn.setPosition(positionAfter);
+        // add Pawn to Field at Position
         field = fieldList.get(positionAfter);
         field.addPawn(pawn);
+        // set new Position to Pawn
+        pawn.setPosition(positionAfter);
+        // set new Place to Pawn
+        pawn.setPlaces(field.getPlace().getId());
 
         PawnMove pawnMove = new PawnMove(
                 pawn,
