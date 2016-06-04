@@ -4,6 +4,7 @@ package Events; /**
 //import Common.Abstract.MainAbstract;
 import Common.Abstract.MainAbstract;
 import Common.Exceptions.*;
+import Common.Util.DebugService;
 import Common.Util.IPFinder;
 import Events.EventManagerComponent.EventManager;
 import YellowPage.RegistrationService;
@@ -32,16 +33,17 @@ public class Main extends MainAbstract {
 
     public static void main(String[] args) {
 
-        port(port);
+        System.out.println("=== Events ===");
 
+        port(port);
         Main main = new Main();
         EventManager eventManager = new EventManager();
-        System.out.println("=== Events ===");
-//        RegistrationService registrationService = new RegistrationService(main);
-//        registrationService.startRegistration();
 
+        RegistrationService registrationService = new RegistrationService(main);
+        registrationService.startRegistration();
 
         YellowPageService.startListening();
+        DebugService.start();
 
 
         get("/events/subscriptions", (req,res) -> {
@@ -158,7 +160,7 @@ public class Main extends MainAbstract {
     }
 
     private static void checkContentTypeJson(Request req) throws WrongContentTypeException {
-        if(!req.headers("Content-Type").equals("application/json")) throw new WrongContentTypeException();
+        if(req.contentType() == null || !req.contentType().equals("application/json")) throw new WrongContentTypeException();
     }
 
     private static void setResponseContentTypeJson(Response res){

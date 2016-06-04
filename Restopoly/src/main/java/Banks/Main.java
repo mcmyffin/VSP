@@ -3,6 +3,7 @@ package Banks;
 import Banks.BankManagerComponent.BankManager;
 import Common.Abstract.MainAbstract;
 import Common.Exceptions.*;
+import Common.Util.DebugService;
 import Common.Util.IPFinder;
 import YellowPage.RegistrationService;
 import YellowPage.YellowPageService;
@@ -32,15 +33,16 @@ public class Main extends MainAbstract{
 
     public static void main(String[] args) {
 
+        System.out.println("=== Banks ===");
         port(port);
         Main main = new Main();
-
         BankManager bankManager = new BankManager();
-        System.out.println("=== Banks ===");
-//        RegistrationService registrationService = new RegistrationService(main);
-//
-//        registrationService.startRegistration();
-//        YellowPageService.startListening();
+
+        RegistrationService registrationService = new RegistrationService(main);
+        registrationService.startRegistration();
+
+        YellowPageService.startListening();
+        DebugService.start();
 
         /**
          * List of available banks

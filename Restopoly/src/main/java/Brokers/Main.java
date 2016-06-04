@@ -3,8 +3,10 @@ package Brokers;
 import Brokers.BrokerManagerComponent.BrokerManager;
 import Common.Abstract.MainAbstract;
 import Common.Exceptions.*;
+import Common.Util.DebugService;
 import Common.Util.IPFinder;
 import YellowPage.RegistrationService;
+import YellowPage.YellowPageService;
 
 import static spark.Spark.*;
 /**
@@ -29,15 +31,17 @@ public class Main extends MainAbstract{
 
     public static void main(String[] args) {
 
-        port(port);
 
+        System.out.println("=== Brokers ===");
+        port(port);
         Main main = new Main();
         BrokerManager brokerManager = new BrokerManager();
 
-        System.out.println("=== Brokers ===");
-//        RegistrationService registrationService = new RegistrationService(main);
-//        registrationService.startRegistration();
+        RegistrationService registrationService = new RegistrationService(main);
+        registrationService.startRegistration();
 
+        YellowPageService.startListening();
+        DebugService.start();
 
         post("/broker", (req, res) -> {
             if(!req.headers("Content-Type").equals("application/json")) throw new WrongContentTypeException();

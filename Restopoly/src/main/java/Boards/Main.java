@@ -3,6 +3,7 @@ package Boards;
 import Boards.BoardManagerComponent.BoardManager;
 import Common.Abstract.MainAbstract;
 import Common.Exceptions.*;
+import Common.Util.DebugService;
 import Common.Util.IPFinder;
 import YellowPage.RegistrationService;
 import YellowPage.YellowPageService;
@@ -35,15 +36,16 @@ public class Main extends MainAbstract{
 
     public static void main(String[] args) {
 
+        System.out.println("=== Boards ===");
         port(port);
         Main main = new Main();
-
         BoardManager boardManager = new BoardManager();
-        System.out.println("=== Boards ===");
-//        RegistrationService registrationService = new RegistrationService(main);
-//
-//        registrationService.startRegistration();
-//        YellowPageService.startListening();
+
+        RegistrationService registrationService = new RegistrationService(main);
+        registrationService.startRegistration();
+
+        YellowPageService.startListening();
+        DebugService.start();
 
         /**
          * returns all active games (both running and joinable)
@@ -80,8 +82,13 @@ public class Main extends MainAbstract{
 
             String gameID = "/boards/"+req.params(":gameID");
 
-            String boardJson = boardManager.getBoard(gameID);
-            return boardJson;
+            if(req.queryMap().toMap().containsKey("expanded")){
+                String boaedExpandedJson = boardManager.getExpandedBoard(gameID);
+                return boaedExpandedJson;
+            }else{
+                String boardJson = boardManager.getBoard(gameID);
+                return boardJson;
+            }
         });
 
         /**

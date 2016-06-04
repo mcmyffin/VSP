@@ -36,6 +36,7 @@ public class Board {
 
     private final Gson gson;
     private RollPersistence rollPersistence;
+    private Jail jailManager;
 
     public Board(String game) throws URISyntaxException {
         this.counter = 0;
@@ -45,6 +46,7 @@ public class Board {
         this.fieldList= new ArrayList();
         this.pawnsMap = new HashMap();
         this.placeMap = new HashMap();
+        this.jailManager = new Jail();
         this.gson     = new Gson();
 
         id = "/boards"+gameURIObject.getId();
@@ -212,6 +214,9 @@ public class Board {
 
         int jailPos = fieldList.indexOf(jail);
         setPawnTo(pawnID,jailPos);
+
+        Pawn pawn = getPawnById(pawnID);
+        jailManager.addPawnToJail(pawn);
     }
 
     public URIObject getGameURIObject(){ return gameURIObject;}
@@ -239,7 +244,6 @@ public class Board {
     }
 
     public BoardDTO toDTO() {
-
         List<FieldDTO> fieldDTOList = new ArrayList<>();
         for(Field field : fieldList) fieldDTOList.add(field.toDTO());
 
@@ -248,6 +252,24 @@ public class Board {
                 fieldDTOList,
                 getPositions()
         );
+    }
+
+    public BoardExpandedDTO toExpandedDTO(){
+        List<FieldExpandedDTO> fieldExpandedDTOList = new ArrayList();
+        for(Field field : fieldList){
+
+            List<String> pawnsList = new ArrayList();
+            for(Pawn pawn : field.getPawns()){
+                pawnsList.add(pawn.getId());
+            }
+
+            FieldExpandedDTO dto = new FieldExpandedDTO(
+                    field.getPlace().toDTO(),
+                    pawnsList
+            );
+            fieldExpandedDTOList.add(dto);
+        }
+        return new BoardExpandedDTO(this.id,fieldExpandedDTOList,getPositions());
     }
 
     public synchronized String addPawn(PawnDTO pawnDTO) {
@@ -357,6 +379,7 @@ public class Board {
 
         // set new Position to Pawn and add Pawn to Field at Position
         pawn.setPosition(pos);
+        pawn.setPlaces(field.getPlace().getId());
         field = fieldList.get(pos);
         field.addPawn(pawn);
     }
@@ -396,5 +419,9 @@ public class Board {
         }catch (UnirestException ex){
             throw new ServiceNotAvaibleException("Game Service nicht erreichbar",ex);
         }
+    }
+
+    public Jail getJailManager() {
+        return jailManager;
     }
 }

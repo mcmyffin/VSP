@@ -51,11 +51,6 @@ public class GameDecks {
         cards.add(createCard("Zweiter Preis","Zweiter Preis im Schönheitswettbewerb. Sie erhalten 10.",CardAction.createAction(10,CardAction.ERHALTE_GELD_VON_BANK)));
 //        cards.add(createCard("Straßenausbesserungsarbeiten","Sie werden zu Straßenausbesserungsarbeiten herangezogen. Zahlen Sie 40 je Haus und 115 je Hotel an die Bank"));
 
-        System.out.println("=== DEBUG OUT ===");
-        System.out.println("INITIALIZE COMMUNITY CARDS");
-        System.out.println(cards.toString());
-        System.out.println("=================");
-
         return cards;
     }
 
@@ -71,20 +66,11 @@ public class GameDecks {
         cards.add(createCard("bank","Die Bank zahlt dir eine Dividende von 750",CardAction.createAction(750,CardAction.ERHALTE_GELD_VON_BANK)));
         cards.add(createCard("rennen","Da du sportlich bist, hast du beim Rennen gewonnen. Ziehe 1500 ein",CardAction.createAction(1500,CardAction.ERHALTE_GELD_VON_BANK)));
 
-        System.out.println("=== DEBUG OUT ===");
-        System.out.println("INITIALIZE CHANCE CARDS");
-        System.out.println(cards.toString());
-        System.out.println("=================");
-
         return cards;
     }
 
     public String getId() {
         return id;
-    }
-
-    public String getGameService() {
-        return gameService;
     }
 
     public Card getCommunityCard() throws DeckException {

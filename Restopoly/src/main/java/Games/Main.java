@@ -1,6 +1,7 @@
 package Games;
 import Common.Abstract.MainAbstract;
 import Common.Exceptions.*;
+import Common.Util.DebugService;
 import Common.Util.IPFinder;
 import Games.GameManagerComponent.GameManager;
 import YellowPage.RegistrationService;
@@ -29,14 +30,18 @@ public class Main extends MainAbstract{
     }
 
     public static void main(String[] args) {
-        port(port);
 
-        GameManager gameManager = new GameManager();
-        Main main = new Main();
+        DebugService.start();
         System.out.println("=== Games ===");
-//        RegistrationService registrationService = new RegistrationService(main);
-//        registrationService.startRegistration();
-//        YellowPageService.startListening();
+
+        port(port);
+        Main main = new Main();
+        GameManager gameManager = new GameManager();
+
+        RegistrationService registrationService = new RegistrationService(main);
+        registrationService.startRegistration();
+
+        YellowPageService.startListening();
 
         /**
          * returns all available games

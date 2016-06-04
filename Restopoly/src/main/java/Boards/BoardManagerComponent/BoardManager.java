@@ -3,6 +3,7 @@ package Boards.BoardManagerComponent;
 import Banks.BankManagerComponent.TransactionState;
 import Banks.BankManagerComponent.TransferAction;
 import Boards.BoardManagerComponent.DTOs.BoardDTO;
+import Boards.BoardManagerComponent.DTOs.BoardExpandedDTO;
 import Boards.BoardManagerComponent.DTOs.PawnDTO;
 import Boards.BoardManagerComponent.Util.InitializeService;
 import Boards.Main;
@@ -21,6 +22,7 @@ import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.JsonNode;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
+import javafx.util.Pair;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -143,7 +145,13 @@ public class BoardManager {
         }
     }
 
-    private int getDiceNumber(Board board) throws ServiceNotAvaibleException, WrongFormatException {
+    private Pair<Integer,EventDTO> getDiceNumber(Board board, Pawn pawn) throws ServiceNotAvaibleException, WrongFormatException {
+
+        // Spieler hat die Nummber XY gewürfelt)
+        String type = "dice roll";
+        String name = "Dice Event";
+        String reason = "Player wants to roll Dice";
+        String resource = "Number: ";
 
         try{
             ComponentsDTO componentsDTO = board.getGameComponents();
@@ -156,7 +164,12 @@ public class BoardManager {
 
                 JSONObject jsonObject = diceResponse.getBody().getObject();
                 int number = jsonObject.getInt("number");
-                return number;
+                resource += number;
+
+                // create Event
+                EventDTO eventDTO = createEvent(board,pawn.getPlayer(),type,name,reason,resource);
+
+                return new Pair(number,eventDTO);
 
             }else throw new ServiceNotAvaibleException("Dice Service-Response != 200");
 
@@ -739,6 +752,15 @@ public class BoardManager {
         return gson.toJson(boardDTO);
     }
 
+    public String getExpandedBoard(String gameID) throws BoardNotFoundException {
+        checkNotNull(gameID);
+
+        Board board = getBoardObjectByGameId(gameID);
+        BoardExpandedDTO expandedDTO = board.toExpandedDTO();
+
+        return gson.toJson(expandedDTO);
+    }
+
     public void deleteBoard(String gameID) throws BoardNotFoundException {
         checkNotNull(gameID);
 
@@ -826,20 +848,74 @@ public class BoardManager {
         // setze mutex wenn nicht bereits geschehen
         setPlayerMutex(pawn,board);
 
+        Jail jailManager = board.getJailManager();
+        // Wenn Spieler im Gefängnis
+        if(jailManager.isPawnInJail(pawnID)){
+
+            // wenn der Spieler seine runden abgesessen hat
+            if(jailManager.getRoundsFromPrisoner(pawnID) <= 0){
+                jailManager.releasePrisoner(pawnID);
+
+                EventDTO event = createEvent(board,
+                        pawn.getPlayer(),
+                        "jail release",
+                        "Board-Jail release Pawn",
+                        "Player has served his time in prison",
+                        "");
+                eventList.add(event);
+            }else{
+                EventDTO jailEvent = createEvent(board,
+                            pawn.getPlayer(),
+                            "try jail release",
+                            "Board-Jail roll dice twice",
+                            "Pawn has to wait "+jailManager.getRoundsFromPrisoner(pawnID)+" rounds. Try to roll 12 by dice",
+                            "");
+
+                Pair<Integer,EventDTO> dicePair1 = getDiceNumber(board,pawn);
+                Pair<Integer,EventDTO> dicePair2 = getDiceNumber(board,pawn);
+
+                board.getRollPersistence().addPawnRoll(pawnID,dicePair1.getKey());
+                board.getRollPersistence().addPawnRoll(pawnID,dicePair2.getKey());
+
+                eventList.add(jailEvent);
+                eventList.add(dicePair1.getValue());
+                eventList.add(dicePair2.getValue());
+
+                // wenn Pawn 2 * 6 Würfelt, dann darf er aus dem Gefängnis raus
+                if((dicePair1.getKey() + dicePair2.getKey()) == 12){
+                    // aus dem Gefändnis lassen
+                    EventDTO event = createEvent(board,
+                            pawn.getPlayer(),
+                            "jail release",
+                            "Board-Jail release Pawn",
+                            "Player has rolled 12 by dice. Player has been released from Jail",
+                            "");
+                    eventList.add(event);
+                }else{
+                    // runde abziehen
+                    jailManager.roundPassedFromPrisoner(pawnID);
+
+                    EventDTO event = createEvent(board,
+                            pawn.getPlayer(),
+                            "remain in prison",
+                            "Board-Jail remain in prison",
+                            "Player does not have 12 diced",
+                            "");
+                    eventList.add(event);
+
+                    // zug abschließen
+                    notifyGameTurnEnds(pawn);
+                    return gson.toJson(eventList);
+                }
+            }
+        }
+
         // 2.1 würfeln
-        int number = getDiceNumber(board);
-
-        // 2.2 erstelle Event (Spieler hat die Nummber XY gewürfelt)
-        String type = "dice roll";
-        String name = "Dice Event";
-        String reason = "Player wants to roll Dice";
-        String resource = "Number: "+number;
-
-        EventDTO eventPlayerDiceDTO = createEvent(board,pawn.getPlayer(),type,name,reason,resource);
-        eventList.add(eventPlayerDiceDTO);
+        Pair<Integer,EventDTO> dicePair = getDiceNumber(board,pawn);
+        eventList.add(dicePair.getValue());
 
         // pawn bewegen
-        List<EventDTO> subEventList = movePawn(gameID,pawnID,number);
+        List<EventDTO> subEventList = movePawn(gameID,pawnID,dicePair.getKey());
         eventList.addAll(subEventList);
 
         // zug abschließen
@@ -867,7 +943,7 @@ public class BoardManager {
         return gson.toJson(place.toDTO());
     }
 
-    public List<EventDTO> movePawn(String gameID, String pawnID, int number) throws BoardNotFoundException, PawnNotFoundException,
+    public synchronized List<EventDTO> movePawn(String gameID, String pawnID, int number) throws BoardNotFoundException, PawnNotFoundException,
             ServiceNotAvaibleException, WrongFormatException, UnirestException {
 
         Board board = getBoardObjectByGameId(gameID);
@@ -896,7 +972,7 @@ public class BoardManager {
         // Wenn kein Beoker für diesen Place eingetragen, dann nicht kaufbares Feld
         if(move.isUeberLos()){
             List<EventDTO> events = notifyBankUeberLos(board,pawn);
-            eventList.addAll(eventList);
+            eventList.addAll(events);
         }
         if(move.getPlace().getBroker().isEmpty()){
             // Gemeinschaftskarte?
@@ -913,7 +989,7 @@ public class BoardManager {
                 // execute Card Action and create Events
                 List<EventDTO> events = executeCardAction(board,card,"Community-Card place","Community card",pawn);
                 eventList.add(event);
-                eventList.addAll(eventList);
+                eventList.addAll(events);
 
             // Ereigniskarte?
             }else if(move.getPlace().getName().equals("Ereignisfeld")){
@@ -929,10 +1005,17 @@ public class BoardManager {
                 // execute Card Action and create Events
                 List<EventDTO> events = executeCardAction(board,card,"Chance-Card place","Community card",pawn);
                 eventList.add(event);
-                eventList.addAll(eventList);
+                eventList.addAll(events);
 
             // Gefängnis
             }else if(move.getPlace().getName().equals("Gehen ins Gefängnis")){
+                EventDTO eventDTO = createEvent(board,
+                                            pawn.getPlayer(),
+                                            "pawn move",
+                                            "Go to Jail",
+                                            "Pawn stands on \"Go to Jail\" Place",
+                                            resource);
+                eventList.add(eventDTO);
                 board.setPawnToJail(pawnID);
             }
 
@@ -969,7 +1052,7 @@ public class BoardManager {
         // Wenn kein Beoker für diesen Place eingetragen, dann nicht kaufbares Feld
         if(move.isUeberLos()){
             List<EventDTO> events = notifyBankUeberLos(board,pawn);
-            eventList.addAll(eventList);
+            eventList.addAll(events);
         }
         if(move.getPlace().getBroker().isEmpty()){
             // Gemeinschaftskarte?
@@ -986,7 +1069,7 @@ public class BoardManager {
                 // execute Card Action and create Events
                 List<EventDTO> events = executeCardAction(board,card,"Community-Card","Community-Place",pawn);
                 eventList.add(event);
-                eventList.addAll(eventList);
+                eventList.addAll(events);
 
             // Ereigniskarte?
             }else if(move.getPlace().getName().equals("Ereignisfeld")){
@@ -1002,7 +1085,7 @@ public class BoardManager {
                 // execute Card Action and create Events
                 List<EventDTO> events = executeCardAction(board,card,"Chance-Card","Chance-Card place",pawn);
                 eventList.add(event);
-                eventList.addAll(eventList);
+                eventList.addAll(events);
 
             // Gefängnis
             }else if(move.getPlace().getName().equals("Gehen ins Gefängnis")){

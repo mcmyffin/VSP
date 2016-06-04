@@ -2,9 +2,11 @@ package Decks;
 
 import Common.Abstract.MainAbstract;
 import Common.Exceptions.*;
+import Common.Util.DebugService;
 import Common.Util.IPFinder;
 import Decks.DeckManagerComponent.DeckManager;
 import YellowPage.RegistrationService;
+import YellowPage.YellowPageService;
 import org.json.JSONException;
 import spark.Request;
 import spark.Response;
@@ -34,14 +36,17 @@ public class Main extends MainAbstract{
 
     public static void main(String[] args) {
 
+        System.out.println("=== Decks ===");
+
         port(port);
         Main main = new Main();
-
         DeckManager deckManager = new DeckManager();
 
-        System.out.println("=== Decks ===");
-//        RegistrationService registrationService = new RegistrationService(main);
-//        registrationService.startRegistration();
+        RegistrationService registrationService = new RegistrationService(main);
+        registrationService.startRegistration();
+
+        YellowPageService.startListening();
+        DebugService.start();
 
         /**
          * List of available deck
