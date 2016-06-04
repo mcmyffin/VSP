@@ -124,7 +124,7 @@ public class Broker {
         String owner = "";
         int value = 0;
         int houses = 0;
-        String visit = this.id+"/places/visit";
+        String visit = placeID+"/visit";
 
         String hypocredit = placeID+"/hypothecarycredit";
 
