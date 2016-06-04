@@ -14,6 +14,7 @@ import Decks.DeckManagerComponent.DTOs.CardDTO;
 import Events.EventManagerComponent.DTO.EventDTO;
 import Games.GameManagerComponent.DTO.ComponentsDTO;
 import Games.GameManagerComponent.DTO.PlayerDTO;
+import Games.GameManagerComponent.GameStatus;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 import com.mashape.unirest.http.HttpResponse;
@@ -26,6 +27,7 @@ import org.json.JSONObject;
 import java.net.URISyntaxException;
 import java.util.*;
 
+import static Decks.DeckManagerComponent.CardAction.*;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
@@ -584,7 +586,7 @@ public class BoardManager {
         checkNotNull(cardType);
         checkNotNull(pawn);
 
-        switch (card.getCardAction()){
+        switch (card.getCardAction().getName()){
             case BEWEGE_DICH: {
                 // execute movement
                 List<EventDTO> events = movePawnByCard(board,pawn,card.getCardAction().getNumber(),cardType);
@@ -633,6 +635,52 @@ public class BoardManager {
             }
         }
         throw new UnsupportedOperationException("TODO");
+    }
+
+    private synchronized boolean isGameRunningStatus(Board board) throws ServiceNotAvaibleException {
+        checkNotNull(board);
+
+        String gameURI = board.getGameURIObject().getAbsoluteURI()+"/status";
+        try{
+
+            HttpResponse<String> gameResponse = Unirest.get(gameURI).asString();
+            if(gameResponse.getStatus() == 200){
+
+                GameStatus status = GameStatus.valueOf(gameResponse.getBody());
+                return GameStatus.RUNNING.equals(status);
+
+            } else {
+                throw new ServiceNotAvaibleException("Game Service unerwarteter Response-Code\n" +
+                                                    "get("+gameURI+")\n" +
+                                                    "status: "+gameResponse.getStatus()+"\n" +
+                                                    "body: "+gameResponse.getBody());
+            }
+
+        }catch (UnirestException ex){
+            throw new ServiceNotAvaibleException("Game Service nicht erreichbar");
+        }catch (IllegalArgumentException ex){
+            throw new ServiceNotAvaibleException("Game Service unerwarteter GameStatus");
+        }
+    }
+
+    private synchronized void notifyGameTurnEnds(Pawn pawn) throws ServiceNotAvaibleException {
+        checkNotNull(pawn);
+
+        String gameURI = pawn.getPlayer()+"/ready";
+
+        try{
+
+            HttpResponse<String> turnEndResponse = Unirest.put(gameURI).asString();
+            if(turnEndResponse.getStatus() != 200){
+                throw new ServiceNotAvaibleException("Game Service unerwarteter Response-Code\n" +
+                                                    "put("+gameURI+")\n" +
+                                                    "status: "+turnEndResponse.getStatus()+"\n" +
+                                                    "body: "+turnEndResponse.getBody());
+            }
+
+        }catch (UnirestException ex){
+            throw new ServiceNotAvaibleException("Game Service nicht erreichbar");
+        }
     }
 
     /***************************/
@@ -760,7 +808,7 @@ public class BoardManager {
     }
 
     public synchronized String pawnRoll(String gameID, String pawnID) throws BoardNotFoundException, PawnNotFoundException,
-            PlayersWrongTurnException, ServiceNotAvaibleException, WrongFormatException, UnirestException, MutexNotReleasedException {
+            PlayersWrongTurnException, ServiceNotAvaibleException, WrongFormatException, UnirestException, MutexNotReleasedException, GameStateException {
         checkNotNull(gameID);
         checkNotNull(pawnID);
 
@@ -769,8 +817,11 @@ public class BoardManager {
         Board board = getBoardObjectByGameId(gameID);
         Pawn pawn = board.getPawnById(pawnID);
 
+        // prüfe ob spiel im status running ist
+        if(!isGameRunningStatus(board)) throw new GameStateException("Spiel ist nicht im Running Status");
+
         // !!! prüfe ob der Spieler am Zug ist !!!
-        if(!isPlayersTurn(pawn,board)) throw new PlayersWrongTurnException();
+        if(!isPlayersTurn(pawn,board)) throw new PlayersWrongTurnException("Worng player turn");
 
         // setze mutex wenn nicht bereits geschehen
         setPlayerMutex(pawn,board);
@@ -790,6 +841,9 @@ public class BoardManager {
         // pawn bewegen
         List<EventDTO> subEventList = movePawn(gameID,pawnID,number);
         eventList.addAll(subEventList);
+
+        // zug abschließen
+        notifyGameTurnEnds(pawn);
 
         return gson.toJson(eventList);
     }
