@@ -33,10 +33,10 @@ public class Main extends MainAbstract{
 
         GameManager gameManager = new GameManager();
         Main main = new Main();
-        RegistrationService registrationService = new RegistrationService(main);
-
-        registrationService.startRegistration();
-        YellowPageService.startListening();
+        System.out.println("=== Games ===");
+//        RegistrationService registrationService = new RegistrationService(main);
+//        registrationService.startRegistration();
+//        YellowPageService.startListening();
 
         /**
          * returns all available games
@@ -390,7 +390,7 @@ public class Main extends MainAbstract{
 
         exception(GameStateException.class, (ex, req, res) -> {
             res.status(409); // Conflict
-            res.body("Conflicting situation, such as at least one player is not ready or ending criteria not reached");
+            res.body(ex.getMessage());
             ex.printStackTrace();
         });
 
@@ -403,6 +403,12 @@ public class Main extends MainAbstract{
 
         exception(ServiceNotAvaibleException.class, (ex, req, res) -> {
             res.status(500);// not found
+            res.body(ex.getMessage());
+            ex.printStackTrace();
+        });
+
+        exception(Exception.class, (ex, req, res) -> {
+            res.status(500);//
             res.body(ex.getMessage());
             ex.printStackTrace();
         });

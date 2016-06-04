@@ -156,12 +156,13 @@ public class Game {
         if(status.equals(GameStatus.REGISTRATION)){
 
             if(playerManager.isPlayersReadyToStart()) tryToStartGame();
-            else throw new GameStateException();
+            else throw new GameStateException("Conflicting situation, such as at least one player is not ready or ending criteria not reached");
 
         }else if(status.equals(GameStatus.RUNNING)){
 
-            if(isGameEndCreteriaReached()) tryToStopGame();
-            else throw new GameStateException();
+            if(isGameEndCreteriaReached()){
+                tryToStopGame();
+            } else throw new GameStateException("Conflicting situation, such as at least one player is not ready or ending criteria not reached");
         }else{
 
             playerManager.resetPlayersReady();
@@ -185,21 +186,50 @@ public class Game {
         }
     }
 
+    private String getClientURI(String usersURI) throws ServiceNotAvaibleException {
+        checkNotNull(usersURI);
+
+        try{
+
+            HttpResponse<String> usersResponse = Unirest.get(usersURI).asString();
+            if(usersResponse.getStatus() == 200){
+                // build JsonObject
+                JSONObject jsonObject = new JSONObject(usersResponse.getBody());
+                String clientURI = jsonObject.getString("uri");
+                return clientURI;
+
+            }else{
+                throw new ServiceNotAvaibleException("Users Service unerwarteter Response-Code\n" +
+                        "get("+usersURI+")\n" +
+                        "status: "+usersResponse.getStatus()+"\n" +
+                        "body: "+usersResponse.getBody());
+            }
+
+        }catch (UnirestException ex){
+            throw new ServiceNotAvaibleException("Users Service nicht erreichbar");
+        }
+    }
+
     private void notifyPlayersTurn(Player p){
         try{
             if(p.getUser() == null || p.getUser().isEmpty()) throw new ServiceNotAvaibleException("UserURI not found in Player");
 
             String userURI = p.getUser();
-            HttpResponse<JsonNode> userResponse = Unirest.get(userURI).asJson();
 
-            // check response
-            if(userResponse.getStatus() != 200) throw new WrongResponsCodeException("Statuscode: "+userResponse.getStatus()+"\nBody: "+userResponse.getBody());
+            String clientURI = getClientURI(userURI)+"/turn";
 
-            JSONObject jsonObject = userResponse.getBody().getObject();
-            String clientURI = jsonObject.getString("uri");
+            HttpResponse<String> response = Unirest.post(clientURI).header("Content-Type","application/json")
+                                                                .body("{ \"player\" : \""+ Main.URL+p.getId()+"\"}")
+                                                                .asString();
 
-            Unirest.post(clientURI).header("Content-Type","application/json")
-                                    .body("{ \"player\" : \""+ Main.URL+p.getId()+"\"}");
+            if(response.getStatus() != 200 && response.getStatus() != 201){
+                throw new ServiceNotAvaibleException("User Service unerwarteter Response-Code\n" +
+                        "post("+clientURI+")\n" +
+                        "req.header(\"Content-Type\",\"application/json\")\n" +
+                        "req.body({ \"player\" : \""+ Main.URL+p.getId()+"\"})\n" +
+                        "res.status: "+response.getStatus()+"\n" +
+                        "res.body: "+ response.getBody());
+            }
 
         }catch (Exception e){
             e.printStackTrace();
@@ -216,24 +246,6 @@ public class Game {
     private boolean isGameEndCreteriaReached(){
         // TODO
         throw new UnsupportedOperationException();
-    }
-
-}
-
-enum GameStatus {
-    REGISTRATION("registration"),
-    RUNNING("running"),
-    FINISHED("finished");
-
-    private String val;
-
-    GameStatus(String val) {
-        this.val = val;
-    }
-
-    @Override
-    public String toString(){
-        return this.val;
     }
 }
 

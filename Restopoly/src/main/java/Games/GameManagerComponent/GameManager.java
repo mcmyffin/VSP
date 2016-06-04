@@ -3,6 +3,8 @@ package Games.GameManagerComponent;
 import Banks.BankManagerComponent.DTOs.AccountDTO;
 import Boards.BoardManagerComponent.DTOs.PawnDTO;
 import Common.Exceptions.*;
+import Events.EventManagerComponent.DTO.EventDTO;
+import Events.EventManagerComponent.DTO.SubscriberDTO;
 import Games.GameManagerComponent.DTO.*;
 import Games.Main;
 import YellowPage.RegistrationService;
@@ -16,6 +18,7 @@ import com.mashape.unirest.http.exceptions.UnirestException;
 import com.sun.istack.internal.NotNull;
 import org.json.JSONObject;
 
+import java.net.URISyntaxException;
 import java.util.*;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -179,6 +182,73 @@ public class GameManager {
             ex.printStackTrace();
         } catch (WrongResponsCodeException e) {
             e.printStackTrace();
+        }
+    }
+
+    private String getClientURI(String usersURI) throws ServiceNotAvaibleException {
+        checkNotNull(usersURI);
+
+        try{
+
+            HttpResponse<String> usersResponse = Unirest.get(usersURI).asString();
+            if(usersResponse.getStatus() == 200){
+                // build JsonObject
+                JSONObject jsonObject = new JSONObject(usersResponse.getBody());
+                String clientURI = jsonObject.getString("uri");
+                return clientURI;
+
+            }else{
+                throw new ServiceNotAvaibleException("Users Service unerwarteter Response-Code\n" +
+                                                    "get("+usersURI+")\n" +
+                                                    "status: "+usersResponse.getStatus()+"\n" +
+                                                    "body: "+usersResponse.getBody());
+            }
+
+        }catch (UnirestException ex){
+            throw new ServiceNotAvaibleException("Users Service nicht erreichbar");
+        }
+    }
+
+    private void createEventSubscriptions(String gameID,String playerID) throws PlayerNotFoundException, GameNotFoundException, ServiceNotAvaibleException {
+        checkNotNull(gameID);
+        checkNotNull(playerID);
+
+        Game game = getGameObjectById(gameID);
+        Player player = game.getPlayerManager().getPlayerById(playerID);
+        String eventURI = game.getComponents().getEvents()+"/subscriptions";
+
+        String clientURI = getClientURI(player.getUser())+"/event";
+
+        EventDTO eventRegex = new EventDTO(
+                game.getComponents().getGame(),
+                "",
+                "",
+                "",
+                "",
+                "",
+                ""
+        );
+
+        SubscriberDTO subscriber = new SubscriberDTO(null,game.getComponents().getGame(),clientURI,eventRegex);
+
+        try{
+
+            HttpResponse<String> response = Unirest.post(eventURI).header("Content-Type","application/json").body(gson.toJson(subscriber)).asString();
+            if(response.getStatus() == 200){
+                System.out.println("=== Client Subscriber success ===");
+                System.out.println(response.getHeaders().getFirst("Location"));
+                System.out.println("=================================");
+            }else{
+                throw new ServiceNotAvaibleException("Event Service unerwarteter Respon-Code\n" +
+                                                    "post("+eventURI+")\n" +
+                                                    "req.header(\"Content-Type\",\"application/json\")\n" +
+                                                    "req.body: "+gson.toJson(subscriber)+"\n" +
+                                                    "res.status: "+response.getStatus()+"\n" +
+                                                    "res.body"+ response.getBody());
+            }
+
+        }catch (UnirestException ex){
+            throw new ServiceNotAvaibleException("Event Service nicht erreichbar");
         }
     }
 
@@ -368,15 +438,25 @@ public class GameManager {
         return gson.toJson(playerDTOCollection);
     }
 
-    public String createPlayer(String gameID, String playerJsonString) throws GameNotFoundException, WrongFormatException, GameFullException, ServiceNotAvaibleException {
+    public String createPlayer(String gameID, String playerJsonString) throws GameNotFoundException, WrongFormatException, GameFullException, ServiceNotAvaibleException, PlayerAlreadyExistsException, GameStateException, PlayerNotFoundException {
 
         try{
+            // parse player from Json to DTO
             PlayerDTO playerDTO = gson.fromJson(playerJsonString,PlayerDTO.class);
 
+            // get Game by ID
             Game g =  getGameObjectById(gameID);
-            PlayerManager playerManager = g.getPlayerManager();
-            String playerID = playerManager.addPlayer(playerDTO);
 
+            // check game-status
+            // if game status == running -> exception
+            if(!g.getStatus().equals(GameStatus.REGISTRATION)){
+                throw new GameStateException("Registrieren nicht erlaubt.\nGame-Status: "+g.getStatus().toString());
+            }
+
+            // get PlayerManager
+            PlayerManager playerManager = g.getPlayerManager();
+            // add new Player
+            String playerID = playerManager.addPlayer(playerDTO);
 
             // Bankaccount für Player erstellen
             createBankAccount(gameID,playerID);
@@ -384,10 +464,15 @@ public class GameManager {
             // Pawn für Player erstellen
             createPawn(gameID,playerID);
 
+            // create Event subscriptions
+            createEventSubscriptions(gameID,playerID);
+
             return playerID;
 
         }catch (JsonSyntaxException ex){
-            throw new WrongFormatException();
+            throw new WrongFormatException("Json Syntax wrong",ex);
+        } catch (URISyntaxException e) {
+            throw new WrongFormatException("URI format wrong. URI must be absolute",e);
         }
     }
 
