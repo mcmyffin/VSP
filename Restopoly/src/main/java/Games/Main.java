@@ -31,7 +31,7 @@ public class Main extends MainAbstract{
 
     public static void main(String[] args) {
 
-        DebugService.start();
+
         System.out.println("=== Games ===");
 
         port(port);
@@ -42,7 +42,7 @@ public class Main extends MainAbstract{
         registrationService.startRegistration();
 
         YellowPageService.startListening();
-
+        DebugService.start();
         /**
          * returns all available games
          */
