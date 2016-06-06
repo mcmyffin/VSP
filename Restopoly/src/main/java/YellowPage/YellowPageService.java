@@ -19,8 +19,8 @@ import static spark.Spark.get;
  */
 public class YellowPageService {
 
-    public static String yellowPageURL = "http://172.18.0.5:4567/services";
-    public static String yelloPageAdress = "http://172.18.0.5:4567";
+    public static String yelloPageAdress = "http://172.18.0.17:4567";
+    public static String yellowPageURL = yelloPageAdress+"/services";
 
     public static String clearYellowPage() {
 
