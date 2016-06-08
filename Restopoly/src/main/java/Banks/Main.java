@@ -393,6 +393,11 @@ public class Main extends MainAbstract{
             ex.printStackTrace();
         });
 
+        exception(Exception.class, (ex,req,res) -> {
+            res.status(500);
+            res.body("ERROR: "+ex.getMessage());
+            ex.printStackTrace();
+        });
     }
 
     private static void checkContentTypeJson(Request req) throws WrongContentTypeException {

@@ -342,7 +342,7 @@ public class Main extends MainAbstract{
 
         exception(Exception.class, (ex, req, res) -> {
             res.status(409);// conflict
-            res.body(ex.getMessage());
+            res.body(""+ex.getMessage());
             ex.printStackTrace();
         });
 
